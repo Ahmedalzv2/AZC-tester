@@ -30,9 +30,11 @@ def test_oos_too_few_trades_is_never_candidate():
 
 
 def test_strong_signal_passes_champion_gate_directly():
-    strong = np.full(120, 0.25)  # +0.25R every trade, 120 trades
+    # A realistic strong edge: mostly winners, some losers -> positive mean WITH
+    # variance (a constant array has zero variance and an undefined t-stat).
+    strong = np.array([0.3] * 100 + [-0.1] * 20)
     assert fitness._passes_gate(
-        is_score=0.25, oos_n=strong.size, oos_mean=0.25,
+        is_score=float(strong.mean()), oos_n=strong.size, oos_mean=float(strong.mean()),
         oos_t=fitness._tstat(strong), oos_p=fitness._pvalue(strong),
         alpha_deflated=0.05,
     ) is True
