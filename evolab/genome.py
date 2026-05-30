@@ -110,3 +110,27 @@ def random_genome(rng: random.Random, family: str | None = None) -> Genome:
 
 def genome_key(g: Genome) -> tuple:
     return (g.family, tuple(sorted(g.params.items())))
+
+
+def mutate(genome: Genome, rng: random.Random, n_params: int = 1) -> Genome:
+    """Perturb 1..n params by +/-1 step (or re-pick a choice), staying legal."""
+    schema = PARAM_SCHEMAS[genome.family]
+    params = dict(genome.params)
+    targets = rng.sample(list(schema), k=min(n_params, len(schema)))
+    for name in targets:
+        spec = schema[name]
+        if spec.kind == "choice":
+            params[name] = rng.choice(spec.choices)
+        else:
+            delta = rng.choice([-1, 1]) * spec.step
+            params[name] = _clamp(spec, params[name] + delta)
+    return Genome(genome.family, _repair(genome.family, params))
+
+
+def crossover(a: Genome, b: Genome, rng: random.Random) -> Genome:
+    """Same-family uniform crossover. Different families: clone one parent."""
+    if a.family != b.family:
+        chosen = rng.choice([a, b])
+        return Genome(chosen.family, dict(chosen.params))
+    params = {name: rng.choice([a.params[name], b.params[name]]) for name in a.params}
+    return Genome(a.family, _repair(a.family, params))

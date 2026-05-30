@@ -53,3 +53,43 @@ def test_random_genome_without_family_picks_a_known_family():
     for _ in range(20):
         g = random_genome(rng)
         assert g.family in PARAM_SCHEMAS
+
+
+from evolab.genome import crossover, mutate
+
+
+def test_mutate_stays_in_schema_bounds():
+    rng = random.Random(3)
+    for _ in range(200):
+        parent = random_genome(rng)
+        child = mutate(parent, rng)
+        assert child.family == parent.family
+        assert _in_schema(child)
+
+
+def test_mutate_returns_new_object_not_mutating_parent():
+    rng = random.Random(4)
+    parent = random_genome(rng, family="donchian_break")
+    before = dict(parent.params)
+    mutate(parent, rng)
+    assert parent.params == before
+
+
+def test_crossover_same_family_is_legal_and_mixes():
+    rng = random.Random(5)
+    a = random_genome(rng, family="bollinger_fade")
+    b = random_genome(rng, family="bollinger_fade")
+    child = crossover(a, b, rng)
+    assert child.family == "bollinger_fade"
+    assert _in_schema(child)
+    for name in PARAM_SCHEMAS["bollinger_fade"]:
+        assert child.params[name] in (a.params[name], b.params[name])
+
+
+def test_crossover_different_family_returns_a_clone():
+    rng = random.Random(6)
+    a = random_genome(rng, family="ma_cross")
+    b = random_genome(rng, family="rsi_reversion")
+    child = crossover(a, b, rng)
+    assert child.family in ("ma_cross", "rsi_reversion")
+    assert child.params in (a.params, b.params)
