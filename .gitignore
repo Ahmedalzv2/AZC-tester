@@ -1,0 +1,27 @@
+# Why: local virtualenv is huge and machine-specific.
+.venv/
+
+# Why: Python bytecode and caches are generated noise.
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Why: pytest cache is local test state, not source.
+.pytest_cache/
+
+# Why: editor and OS junk should not pollute the repo.
+.DS_Store
+.idea/
+.vscode/
+
+# Why: local env files may hold tokens or machine-only config.
+.env
+.env.*
+
+# Why: coverage artifacts are generated outputs.
+.coverage
+htmlcov/
+coverage.xml
+
+# Why: runtime logs are disposable local artifacts.
+*.log

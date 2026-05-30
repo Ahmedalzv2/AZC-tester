@@ -1,0 +1,17 @@
+services:
+  backtest-lab:
+    container_name: backtest-lab
+    build: .
+    restart: unless-stopped
+    working_dir: /root/apps/backtest-lab
+    volumes:
+      - /root/apps/backtest-lab:/root/apps/backtest-lab
+      - /root:/root
+    ports:
+      - "3015:3015"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backtest-lab.entrypoints=websecure"
+      - "traefik.http.routers.backtest-lab.rule=Host(`backtest.srv1688368.hstgr.cloud`)"
+      - "traefik.http.routers.backtest-lab.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backtest-lab.loadbalancer.server.port=3015"
