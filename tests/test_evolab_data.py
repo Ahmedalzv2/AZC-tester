@@ -18,6 +18,13 @@ def test_split_respects_oos_fraction():
     assert oos_bars[0].t == 70
 
 
-def test_available_assets_is_a_dict():
+def test_markets_constant_has_expected_assets():
     assert isinstance(data.MARKETS, dict)
     assert "SOL" in data.MARKETS
+
+
+def test_available_assets_returns_subset_of_markets():
+    # Robust regardless of which fixtures are mounted: empty list if none.
+    avail = data.available_assets()
+    assert isinstance(avail, list)
+    assert set(avail).issubset(set(data.MARKETS))
