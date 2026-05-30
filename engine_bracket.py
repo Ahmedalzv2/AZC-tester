@@ -290,6 +290,11 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
     fee_model = "all-taker" if not (maker_entry or maker_tp) else (
         "maker entry+TP / taker stop" if maker_entry and maker_tp else "mixed maker/taker")
 
+    # Significance for a bracket strategy must be measured on the per-trade netR
+    # series, NOT the equity curve (which is flat between trades and dilutes the
+    # HAC t-stat). This is the honest test the AZC lane is judged on.
+    significance = _bracket_significance([t["netR"] for t in trades])
+
     metrics = {
         "ending_equity": round(equity, 2),
         "total_return_pct": round(total_return * 100, 3),
@@ -309,6 +314,7 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
         "strategy_params": {k: v for k, v in params.items()},
         "interval": interval,
         "execution": "bracket",
+        "significance": significance,
     }
 
     trade_rows = [
@@ -328,6 +334,32 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
 def _ms_iso(ms: int) -> str:
     import datetime as _dt
     return _dt.datetime.fromtimestamp(ms / 1000, tz=_dt.timezone.utc).isoformat()
+
+
+def _bracket_significance(net_rs: list[float]) -> dict[str, Any]:
+    """HAC t-stat + bootstrap p-value on the per-trade netR series, reusing the
+    shared stats layer so the verdict matches the rest of the dashboard."""
+    import numpy as np
+
+    from stats import _default_lags, bootstrap_pvalue, newey_west_tstat
+
+    arr = np.asarray(net_rs, dtype=float)
+    n = int(arr.size)
+    if n < 2:
+        return {"n": n, "mean_return": 0.0, "tstat": 0.0, "pvalue": 1.0, "lags": 0,
+                "significant": False, "basis": "per-trade netR"}
+    lags = _default_lags(n)
+    t = newey_west_tstat(arr, lags=lags)
+    p = bootstrap_pvalue(arr)
+    return {
+        "n": n,
+        "mean_return": round(float(arr.mean()), 6),  # mean netR per trade
+        "tstat": round(t, 3),
+        "pvalue": round(p, 4),
+        "lags": int(lags),
+        "significant": bool(abs(t) >= 2.0 and p < 0.05),
+        "basis": "per-trade netR",
+    }
 
 
 def bracket_metrics(trades: list[dict[str, Any]]) -> dict[str, Any]:

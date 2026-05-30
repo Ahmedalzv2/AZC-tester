@@ -10,6 +10,12 @@ const statusBox = document.getElementById('status');
 const tradesBody = document.getElementById('trades-body');
 const loadExampleButton = document.getElementById('load-example');
 const form = document.getElementById('run-form');
+const significanceBox = document.getElementById('significance');
+const sweepGridBox = document.getElementById('sweep-grid');
+const sweepSortBox = document.getElementById('sweep-sort');
+const sweepButton = document.getElementById('sweep-button');
+const sweepStatusBox = document.getElementById('sweep-status');
+const sweepBody = document.getElementById('sweep-body');
 
 let strategies = {};
 let providers = {};
@@ -54,6 +60,25 @@ function renderMetrics(metrics) {
       </div>
     `;
   }).join('');
+}
+
+function renderSignificance(sig) {
+  if (!sig || sig.n < 2) {
+    significanceBox.innerHTML = '';
+    return;
+  }
+  const real = sig.significant;
+  const cls = real ? 'good' : 'bad';
+  const verdict = real ? 'LIKELY REAL' : 'NOT SIGNIFICANT';
+  significanceBox.innerHTML = `
+    <div class="verdict-row ${cls}">
+      <span class="verdict-tag">${verdict}</span>
+      <span class="verdict-stat">t&nbsp;<b>${sig.tstat}</b></span>
+      <span class="verdict-stat">p&nbsp;<b>${sig.pvalue}</b></span>
+      <span class="verdict-stat">n&nbsp;${sig.n}</span>
+    </div>
+    <div class="verdict-note">Edge is trustworthy only when |t| &ge; 2 and p &lt; 0.05. A great curve with weak stats is noise.</div>
+  `;
 }
 
 function renderTrades(trades) {
@@ -162,29 +187,14 @@ async function runBacktest(event) {
   event.preventDefault();
   statusBox.textContent = 'Running...';
   try {
-    const formData = new FormData(form);
-    const payload = {
-      data_provider: formData.get('data_provider'),
-      symbol: formData.get('symbol'),
-      interval: formData.get('interval'),
-      years: Number(formData.get('years')),
-      market: formData.get('market') || null,
-      timezone: formData.get('timezone') || 'UTC',
-      session: formData.get('session') || null,
-      file_path: formData.get('file_path') || null,
-      initial_cash: Number(formData.get('initial_cash')),
-      fee_bps: Number(formData.get('fee_bps')),
-      refresh_data: formData.get('refresh_data') === 'on',
-      strategy: formData.get('strategy'),
-      strategy_params: JSON.parse(paramsBox.value || '{}'),
-      custom_code: customCodeBox.value,
-    };
+    const payload = buildBasePayload();
     const result = await fetchJson('/api/backtest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     renderMetrics(result.metrics);
+    renderSignificance(result.significance);
     renderTrades(result.trades);
     renderCharts(result.price_bars, result.curve);
     sourceBox.textContent = JSON.stringify(result.source, null, 2);
@@ -194,9 +204,83 @@ async function runBacktest(event) {
   }
 }
 
+function buildBasePayload() {
+  const formData = new FormData(form);
+  return {
+    data_provider: formData.get('data_provider'),
+    symbol: formData.get('symbol'),
+    interval: formData.get('interval'),
+    years: Number(formData.get('years')),
+    market: formData.get('market') || null,
+    timezone: formData.get('timezone') || 'UTC',
+    session: formData.get('session') || null,
+    file_path: formData.get('file_path') || null,
+    initial_cash: Number(formData.get('initial_cash')),
+    fee_bps: Number(formData.get('fee_bps')),
+    refresh_data: formData.get('refresh_data') === 'on',
+    strategy: formData.get('strategy'),
+    strategy_params: JSON.parse(paramsBox.value || '{}'),
+    custom_code: customCodeBox.value,
+  };
+}
+
+function renderSweep(out) {
+  const runs = out.runs || [];
+  if (!runs.length) {
+    sweepBody.innerHTML = '<tr><td colspan="9">No runs.</td></tr>';
+    return;
+  }
+  const bestKey = JSON.stringify(out.best?.params);
+  sweepBody.innerHTML = runs.map((run) => {
+    if (run.error || !run.metrics) {
+      return `<tr class="err"><td>${JSON.stringify(run.params)}</td><td colspan="8">${run.error || 'failed'}</td></tr>`;
+    }
+    const m = run.metrics;
+    const s = run.significance || {};
+    const isBest = JSON.stringify(run.params) === bestKey;
+    const sigCls = s.significant ? 'good' : 'bad';
+    const verdict = s.significant ? 'real' : 'noise';
+    return `
+      <tr class="${isBest ? 'best' : ''}">
+        <td>${JSON.stringify(run.params)}</td>
+        <td>${m.total_return_pct}</td>
+        <td>${m.sharpe}</td>
+        <td>${m.max_drawdown_pct}</td>
+        <td>${m.trade_count}</td>
+        <td>${m.win_rate_pct}</td>
+        <td>${s.tstat ?? '-'}</td>
+        <td>${s.pvalue ?? '-'}</td>
+        <td class="${sigCls}">${verdict}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function runSweep() {
+  sweepStatusBox.textContent = 'Sweeping...';
+  sweepButton.disabled = true;
+  try {
+    const payload = buildBasePayload();
+    payload.grid = JSON.parse(sweepGridBox.value || '{}');
+    payload.sort_by = sweepSortBox.value;
+    const out = await fetchJson('/api/sweep', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    renderSweep(out);
+    sweepStatusBox.textContent = `Done — ${out.count} combos`;
+  } catch (error) {
+    sweepStatusBox.textContent = `Error: ${error.message}`;
+  } finally {
+    sweepButton.disabled = false;
+  }
+}
+
 strategySelect?.addEventListener('change', (event) => syncParamsForStrategy(event.target.value));
 providerSelect?.addEventListener('change', syncProviderFields);
 loadExampleButton?.addEventListener('click', loadCustomExample);
+sweepButton?.addEventListener('click', runSweep);
 form?.addEventListener('submit', runBacktest);
 
 Promise.all([loadProviders(), loadStrategies()])
