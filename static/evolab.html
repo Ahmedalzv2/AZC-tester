@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EvoLab — honest strategy search</title>
+  <link rel="stylesheet" href="/static/evolab.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>EvoLab</h1>
+      <p class="tag">Evolves trading strategies per asset and only keeps the ones that survive
+      <strong>out-of-sample + real-fee + statistical-significance</strong> testing.
+      The honest opposite of a leaderboard full of curve-fit +64,000% numbers.</p>
+    </header>
+
+    <section class="bar" id="statbar">
+      <div class="stat"><span class="k">Strategies tested (lifetime)</span><span class="v" id="trials">—</span></div>
+      <div class="stat"><span class="k">Significance bar (deflated &alpha;)</span><span class="v" id="alpha">—</span></div>
+      <div class="stat"><span class="k">Search daemon</span><span class="v" id="daemon">—</span></div>
+    </section>
+
+    <p class="note">A “champion” means a strategy cleared the deflated out-of-sample bar — it is still only a
+    <em>hypothesis</em> until it survives a live forward test. “No champion” is the expected, honest result.</p>
+
+    <table id="assets">
+      <thead>
+        <tr><th>Asset</th><th>Generation</th><th>Best in-sample edge</th><th>Champion (survives honest bar?)</th></tr>
+      </thead>
+      <tbody id="rows"><tr><td colspan="4" class="muted">loading…</td></tr></tbody>
+    </table>
+
+    <footer id="updated" class="muted"></footer>
+  </main>
+  <script src="/static/evolab.js"></script>
+</body>
+</html>
