@@ -1,0 +1,26 @@
+services:
+  backtest-lab-gallant:
+    container_name: backtest-lab-gallant
+    build: .
+    restart: unless-stopped
+    environment:
+      # Shared secret for the run/compute endpoints, substituted from .env
+      # (gitignored). Empty = auth off. Mirrors the base compose so the
+      # internet-facing gallant deploy can require X-API-Key on writes.
+      - AZC_API_KEY=${AZC_API_KEY:-}
+    ports:
+      - "3016:3015"
+    volumes:
+      - /root/apps/backtest-lab-gallant/runs:/root/apps/backtest-lab/runs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backtest-lab-gallant.entrypoints=websecure"
+      - "traefik.http.routers.backtest-lab-gallant.rule=Host(`backtest-gallant.srv1688368.hstgr.cloud`)"
+      - "traefik.http.routers.backtest-lab-gallant.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backtest-lab-gallant.loadbalancer.server.port=3015"
+    networks:
+      - traefiknet
+networks:
+  traefiknet:
+    name: backtest-lab_default
+    external: true

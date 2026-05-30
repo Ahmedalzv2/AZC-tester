@@ -59,11 +59,19 @@ class BaseDataProvider:
 
         normalized = frame.copy()
         rename_map: dict[Any, str] = {}
+        claimed: set[str] = set()
+        # aliases is ordered so the real "close" is seen before "adj close";
+        # whichever claims a canonical name first wins, so we never rename two
+        # source columns to the same target (the duplicate-"Close" bug).
         for raw_name, canonical in aliases.items():
             original = column_map.get(raw_name)
-            if original is not None:
+            if original is not None and canonical not in claimed:
                 rename_map[original] = canonical
+                claimed.add(canonical)
         normalized = normalized.rename(columns=rename_map)
+        # Belt-and-suspenders: drop any residual duplicate columns (e.g. an
+        # upstream frame that already shipped two "Close"s), keeping the first.
+        normalized = normalized.loc[:, ~normalized.columns.duplicated()]
 
         if "Close" not in normalized.columns:
             raise DataSourceError("Dataset must include a close column")
