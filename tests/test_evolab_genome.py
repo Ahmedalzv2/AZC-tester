@@ -19,6 +19,10 @@ def _in_schema(g: Genome) -> bool:
         else:
             if not (spec.low <= v <= spec.high):
                 return False
+            # must sit on the discrete search grid, not just within bounds
+            steps = round((v - spec.low) / spec.step)
+            if abs((spec.low + steps * spec.step) - v) > 1e-9:
+                return False
     return True
 
 
@@ -42,3 +46,10 @@ def test_genome_key_dedups_identical_configs():
     a = Genome("ts_momentum", {"mom": 20, "atrN": 14, "atrMult": 2.0, "trail": 3})
     b = Genome("ts_momentum", {"atrMult": 2.0, "trail": 3, "mom": 20, "atrN": 14})
     assert genome_key(a) == genome_key(b)
+
+
+def test_random_genome_without_family_picks_a_known_family():
+    rng = random.Random(9)
+    for _ in range(20):
+        g = random_genome(rng)
+        assert g.family in PARAM_SCHEMAS
