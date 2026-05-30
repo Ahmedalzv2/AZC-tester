@@ -10,8 +10,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
@@ -89,3 +90,38 @@ def get_evolab() -> dict[str, Any]:
 @router.get("/evolab")
 def evolab_page() -> FileResponse:
     return FileResponse(STATIC_DIR / "evolab.html")
+
+
+# ── strategy-testing gateway (AZC submits a strategy → honest verdict) ────────
+class VerdictRequest(BaseModel):
+    family: str = Field(..., description="strategy family, e.g. donchian_break (azc_trend) / donchian_fade (azc_meanrev)")
+    params: dict = Field(default_factory=dict, description="family params, e.g. {don, atrN, atrMult, trail, erMin, regimeN}")
+    asset: str = Field(..., description="crypto-perp with mounted tape, e.g. SOL/DOGE/XRP")
+    oos_fraction: float = Field(default=0.30, ge=0.05, le=0.95)
+
+
+@router.post("/api/evolab/verdict")
+def post_verdict(req: VerdictRequest) -> dict:
+    """Run a submitted strategy through the fee-accurate truth layer once and
+    return an honest real/marginal/noise verdict. Engine deps are imported
+    lazily so this module (and the read-only dashboard) stay import-clean."""
+    try:
+        from evolab import data, fitness  # local-only deps (bracket_signals)
+    except Exception as exc:  # engine not available on this host
+        raise HTTPException(status_code=503, detail=f"EvoLab engine unavailable: {exc}")
+
+    if req.asset not in data.available_assets():
+        raise HTTPException(
+            status_code=400,
+            detail=f"unknown/unmounted asset '{req.asset}'. Available: {data.available_assets()}",
+        )
+    try:
+        bars = data.load_asset(req.asset)
+        is_bars, oos_bars = data.split(bars, oos_fraction=req.oos_fraction)
+        result = fitness.assess(req.family, req.params, is_bars, oos_bars)
+    except ValueError as exc:  # bad family / params
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"strategy failed to run: {exc}")
+    result["asset"] = req.asset
+    return result

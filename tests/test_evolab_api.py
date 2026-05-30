@@ -45,3 +45,12 @@ def test_missing_files_degrade_gracefully(tmp_path):
     assert out["cumulative_trials"] == 0
     assert out["daemon"] is None
     assert out["assets"] == []
+
+
+def test_verdict_rejects_unknown_asset():
+    import pytest
+    from fastapi import HTTPException
+    req = evolab_api.VerdictRequest(family="donchian_break", params={}, asset="NOPE")
+    with pytest.raises(HTTPException) as exc:
+        evolab_api.post_verdict(req)
+    assert exc.value.status_code == 400
