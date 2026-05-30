@@ -24,11 +24,33 @@ const wfOosBox = document.getElementById('wf-oos');
 const wfButton = document.getElementById('wf-button');
 const wfStatusBox = document.getElementById('wf-status');
 const wfResultBox = document.getElementById('wf-result');
-const historyList = document.getElementById('history-list');
-const historyCount = document.getElementById('history-count');
+
+// browse view
+const viewBrowse = document.getElementById('view-browse');
+const viewReport = document.getElementById('view-report');
+const navBrowse = document.getElementById('nav-browse');
+const navReport = document.getElementById('nav-report');
+const newBacktestBtn = document.getElementById('new-backtest');
+const closeFormBtn = document.getElementById('close-form');
+const browseGrid = document.getElementById('browse-grid');
+const browseCount = document.getElementById('browse-count');
+const fPair = document.getElementById('f-pair');
+const fStrategy = document.getElementById('f-strategy');
+const fTf = document.getElementById('f-tf');
+const fPnl = document.getElementById('f-pnl');
+const fPf = document.getElementById('f-pf');
+const fWin = document.getElementById('f-win');
+const fDd = document.getElementById('f-dd');
+const fSort = document.getElementById('f-sort');
+const filterBtn = document.getElementById('filter-btn');
+const clearBtn = document.getElementById('clear-btn');
+const statStrategies = document.getElementById('stat-strategies');
+const statBacktests = document.getElementById('stat-backtests');
+const statAssets = document.getElementById('stat-assets');
 
 let strategies = {};
 let providers = {};
+let allRuns = [];
 
 // ---------------- formatting ----------------
 const money0 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -402,7 +424,7 @@ async function runBacktest(event) {
     const ret = result.metrics.total_return_pct;
     runBadge.textContent = fmtPct(ret);
     runBadge.className = `pill ${signClass(ret)}`;
-    loadHistory();  // the run was auto-saved server-side; refresh the list
+    loadBrowse();  // the run was auto-saved server-side; refresh Browse
   } catch (error) {
     statusBox.textContent = `Error: ${error.message}`;
     runBadge.textContent = 'Error';
@@ -410,42 +432,130 @@ async function runBacktest(event) {
   }
 }
 
-// ---------------- run history (auto-saved) ----------------
-function renderHistory(runs) {
-  historyCount.textContent = runs.length ? `${runs.length} saved` : '';
-  if (!runs.length) {
-    historyList.innerHTML = '<div class="muted-text">No saved runs yet — every backtest you run is saved here automatically.</div>';
+// ---------------- view switching ----------------
+function showView(name) {
+  const browse = name === 'browse';
+  viewBrowse.classList.toggle('hidden', !browse);
+  viewReport.classList.toggle('hidden', browse);
+  navBrowse.classList.toggle('active', browse);
+  navReport.classList.toggle('active', !browse);
+  if (browse) loadBrowse();
+  window.scrollTo({ top: 0 });
+}
+
+// ---------------- browse (saved strategies) ----------------
+function humanStrategy(name) {
+  return (name || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const secs = Math.max(0, Date.now() / 1000 - ts);
+  if (secs < 3600) return `${Math.round(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.round(secs / 3600)}h ago`;
+  return `${Math.round(secs / 86400)}d ago`;
+}
+
+function sparkSvg(points, up) {
+  if (!points || points.length < 2) return '';
+  const w = 100, h = 32;
+  const lo = Math.min(...points), hi = Math.max(...points);
+  const span = (hi - lo) || 1;
+  const stroke = up ? '#22c55e' : '#ef4444';
+  const fill = up ? 'rgba(34,197,94,0.16)' : 'rgba(239,68,68,0.16)';
+  const xy = points.map((v, i) => `${(i / (points.length - 1)) * w},${h - ((v - lo) / span) * h}`);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polygon points="0,${h} ${xy.join(' ')} ${w},${h}" fill="${fill}" stroke="none"/>
+    <polyline points="${xy.join(' ')}" fill="none" stroke="${stroke}" stroke-width="1.5"/>
+  </svg>`;
+}
+
+function uniqueCounts(runs, key) {
+  const map = new Map();
+  runs.forEach((r) => { const k = r[key]; if (k) map.set(k, (map.get(k) || 0) + 1); });
+  return [...map.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function fillFacet(select, label, counts, current) {
+  const opts = [`<option value="">${label}</option>`].concat(
+    counts.map(([k, n]) => `<option value="${k}">${k} (${n})</option>`));
+  select.innerHTML = opts.join('');
+  if (current) select.value = current;
+}
+
+function refreshFacets() {
+  fillFacet(fPair, 'All pairs', uniqueCounts(allRuns, 'symbol'), fPair.value);
+  fillFacet(fStrategy, 'All strategies', uniqueCounts(allRuns, 'strategy'), fStrategy.value);
+  fillFacet(fTf, 'All timeframes', uniqueCounts(allRuns, 'interval'), fTf.value);
+}
+
+function applyFilters(runs) {
+  const num = (el) => (el.value === '' ? null : Number(el.value));
+  const minPnl = num(fPnl), minPf = num(fPf), minWin = num(fWin), maxDd = num(fDd);
+  let out = runs.filter((r) => {
+    if (fPair.value && r.symbol !== fPair.value) return false;
+    if (fStrategy.value && r.strategy !== fStrategy.value) return false;
+    if (fTf.value && r.interval !== fTf.value) return false;
+    if (minPnl !== null && !(Number(r.total_return_pct) >= minPnl)) return false;
+    if (minPf !== null && !(Number(r.profit_factor) >= minPf)) return false;
+    if (minWin !== null && !(Number(r.win_rate_pct) >= minWin)) return false;
+    if (maxDd !== null && !(Math.abs(Number(r.max_drawdown_pct)) <= maxDd)) return false;
+    return true;
+  });
+  const sort = fSort.value;
+  out.sort((a, b) => {
+    if (sort === 'created_at') return (b.created_at || 0) - (a.created_at || 0);
+    if (sort === 'max_drawdown_pct_asc') return Math.abs(a.max_drawdown_pct ?? 1e9) - Math.abs(b.max_drawdown_pct ?? 1e9);
+    return (Number(b[sort]) || -1e18) - (Number(a[sort]) || -1e18);
+  });
+  return out;
+}
+
+function renderBrowse() {
+  const runs = applyFilters(allRuns);
+  browseCount.textContent = `${runs.length} of ${allRuns.length}`;
+  if (!allRuns.length) {
+    browseGrid.innerHTML = '<div class="empty card">No strategies tested yet. Click <b>+ New backtest</b> (or POST to <code>/api/backtest</code>) — every run lands here automatically.</div>';
     return;
   }
-  historyList.innerHTML = runs.map((r) => {
-    const when = r.created_at ? new Date(r.created_at * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
-    const sig = r.significant ? '<span class="hist-sig good">real</span>' : '<span class="hist-sig bad">noise</span>';
+  if (!runs.length) { browseGrid.innerHTML = '<div class="empty card">No runs match these filters.</div>'; return; }
+  browseGrid.innerHTML = runs.map((r) => {
+    const up = Number(r.total_return_pct) >= 0;
+    const sig = r.significant ? '<span class="card-tag good">REAL</span>' : '<span class="card-tag bad">NOISE</span>';
     return `
-      <div class="history-row" data-id="${r.id}">
-        <div class="hist-main">
-          <span class="hist-symbol">${r.symbol ?? '—'}</span>
-          <span class="chip">${r.interval ?? ''}</span>
-          <span class="hist-strategy">${r.strategy ?? ''}</span>
+      <div class="strat-card" data-id="${r.id}">
+        <div class="sc-head">
+          <div class="sc-title">${humanStrategy(r.strategy)}</div>
           ${sig}
         </div>
-        <div class="hist-stats">
-          <span class="num ${signClass(r.total_return_pct)}">${fmtPct(r.total_return_pct)}</span>
-          <span class="hist-stat">DD ${fmtPct(r.max_drawdown_pct)}</span>
-          <span class="hist-stat">PF ${fmtNum(r.profit_factor, 2)}</span>
-          <span class="hist-stat">${r.trade_count ?? 0} trades</span>
-          <span class="hist-when">${when}</span>
-          <button class="hist-del ghost" data-del="${r.id}" title="Delete run">✕</button>
+        <div class="sc-sub">${r.symbol ?? '—'} · ${r.interval ?? ''}</div>
+        <div class="sc-spark">${sparkSvg(r.spark, up)}</div>
+        <div class="sc-kpis">
+          <div><div class="k-label">NET P&L %</div><div class="k-val ${signClass(r.total_return_pct)}">${fmtPct(r.total_return_pct)}</div></div>
+          <div><div class="k-label">MAX DD %</div><div class="k-val bad">${fmtPct(r.max_drawdown_pct)}</div></div>
+          <div><div class="k-label">WIN RATE</div><div class="k-val">${fmtPct(r.win_rate_pct, 1)}</div></div>
+          <div><div class="k-label">PF / TRADES</div><div class="k-val">${fmtNum(r.profit_factor, 2)} / ${r.trade_count ?? 0}</div></div>
+        </div>
+        <div class="sc-foot">
+          <span class="muted-text">${timeAgo(r.created_at)}</span>
+          <button class="sc-view" data-view="${r.id}" type="button">View report →</button>
+          <button class="sc-del ghost" data-del="${r.id}" type="button" title="Delete">✕</button>
         </div>
       </div>`;
   }).join('');
 }
 
-async function loadHistory() {
+async function loadBrowse() {
   try {
     const out = await fetchJson('/api/runs');
-    renderHistory(out.runs || []);
+    allRuns = out.runs || [];
+    statBacktests.textContent = allRuns.length.toLocaleString();
+    statStrategies.textContent = new Set(allRuns.map((r) => `${r.strategy}|${JSON.stringify(r.params)}|${r.symbol}|${r.interval}`)).size.toLocaleString();
+    statAssets.textContent = new Set(allRuns.map((r) => r.symbol)).size.toLocaleString();
+    refreshFacets();
+    renderBrowse();
   } catch (error) {
-    historyList.innerHTML = `<div class="muted-text">History unavailable: ${error.message}</div>`;
+    browseGrid.innerHTML = `<div class="empty card">Browse unavailable: ${error.message}</div>`;
   }
 }
 
@@ -456,7 +566,7 @@ async function openRun(id) {
     const ret = record.response.metrics.total_return_pct;
     runBadge.textContent = fmtPct(ret);
     runBadge.className = `pill ${signClass(ret)}`;
-    reportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showView('report');
   } catch (error) {
     statusBox.textContent = `Error opening run: ${error.message}`;
   }
@@ -465,17 +575,30 @@ async function openRun(id) {
 async function deleteRun(id) {
   try {
     await fetchJson(`/api/runs/${id}`, { method: 'DELETE' });
-    loadHistory();
+    loadBrowse();
   } catch (error) {
-    statusBox.textContent = `Error deleting run: ${error.message}`;
+    browseCount.textContent = `Error deleting run: ${error.message}`;
   }
 }
 
-historyList?.addEventListener('click', (event) => {
+browseGrid?.addEventListener('click', (event) => {
   const del = event.target.closest('[data-del]');
   if (del) { event.stopPropagation(); deleteRun(del.getAttribute('data-del')); return; }
-  const row = event.target.closest('.history-row');
-  if (row) openRun(row.getAttribute('data-id'));
+  const id = event.target.closest('[data-id]')?.getAttribute('data-id');
+  if (id) openRun(id);
+});
+navBrowse?.addEventListener('click', () => showView('browse'));
+navReport?.addEventListener('click', () => showView('report'));
+newBacktestBtn?.addEventListener('click', () => { showView('report'); formSection.classList.remove('hidden'); });
+closeFormBtn?.addEventListener('click', () => formSection.classList.add('hidden'));
+[filterBtn].forEach((b) => b?.addEventListener('click', renderBrowse));
+[fPair, fStrategy, fTf, fSort].forEach((el) => el?.addEventListener('change', renderBrowse));
+[fPnl, fPf, fWin, fDd].forEach((el) => el?.addEventListener('keydown', (e) => { if (e.key === 'Enter') renderBrowse(); }));
+clearBtn?.addEventListener('click', () => {
+  [fPnl, fPf, fWin, fDd].forEach((el) => { el.value = ''; });
+  [fPair, fStrategy, fTf].forEach((el) => { el.value = ''; });
+  fSort.value = 'total_return_pct';
+  renderBrowse();
 });
 
 // ---------------- strategy / provider config ----------------
@@ -607,6 +730,8 @@ wfButton?.addEventListener('click', runWalkForward);
 form?.addEventListener('submit', runBacktest);
 toggleFormButton?.addEventListener('click', () => formSection.classList.toggle('hidden'));
 
+// Land on Browse. We intentionally do NOT auto-run a backtest on load —
+// that would save a new run every page view and spam Browse.
 Promise.all([loadProviders(), loadStrategies()])
-  .then(() => { loadHistory(); return runBacktest(); })
-  .catch((error) => { statusBox.textContent = `Boot error: ${error.message}`; });
+  .then(() => loadBrowse())
+  .catch((error) => { browseCount.textContent = `Boot error: ${error.message}`; });

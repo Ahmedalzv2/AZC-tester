@@ -40,6 +40,17 @@ def _write_index(entries: list[dict[str, Any]]) -> None:
     INDEX_PATH.write_text(json.dumps(entries, indent=2))
 
 
+def _spark(response: dict[str, Any], points: int = 48) -> list[float]:
+    """Downsampled equity curve for the Browse card sparkline."""
+    curve = response.get("curve") or []
+    equity = [float(p.get("equity", 0.0)) for p in curve]
+    n = len(equity)
+    if n <= points:
+        return [round(e, 2) for e in equity]
+    step = n / points
+    return [round(equity[min(int(i * step), n - 1)], 2) for i in range(points)]
+
+
 def _summary(run_id: str, created_at: float, request: dict[str, Any], response: dict[str, Any]) -> dict[str, Any]:
     metrics = response.get("metrics", {}) or {}
     report = metrics.get("report", {}) or {}
@@ -58,6 +69,7 @@ def _summary(run_id: str, created_at: float, request: dict[str, Any], response: 
         "net_pnl": report.get("net_pnl"),
         "profit_factor": report.get("profit_factor"),
         "significant": (response.get("significance") or {}).get("significant"),
+        "spark": _spark(response),
     }
 
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AZC Tester — Strategy Report</title>
+    <title>AZC Tester</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
@@ -12,18 +12,67 @@
       <div class="brand">
         <span class="brand-mark">▲</span>
         <span class="brand-name">AZC&nbsp;TESTER</span>
-        <span class="brand-sub">Strategy Report</span>
       </div>
+      <nav class="nav">
+        <button id="nav-browse" class="nav-tab active" type="button">Browse Strategies</button>
+        <button id="nav-report" class="nav-tab" type="button">Strategy Report</button>
+      </nav>
       <div class="topbar-right">
         <span id="run-badge" class="pill muted-pill">Idle</span>
-        <button id="toggle-form" type="button" class="ghost">Run / Config</button>
+        <button id="new-backtest" type="button">+ New backtest</button>
       </div>
     </header>
 
-    <main class="page">
-      <!-- ============================ RUN FORM ============================ -->
-      <section id="form-section" class="card form-panel">
-        <h2>Run backtest</h2>
+    <!-- ============================ BROWSE ============================ -->
+    <main id="view-browse" class="page">
+      <div>
+        <h1 class="page-title">Browse Strategies</h1>
+        <p class="page-sub">Every backtest this tester has run, ranked by performance. Filter by asset, strategy, or KPI — open any report.</p>
+      </div>
+
+      <div class="stats-bar card">
+        <div class="stat"><div id="stat-strategies" class="stat-value">0</div><div class="stat-label">STRATEGIES</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><div id="stat-backtests" class="stat-value">0</div><div class="stat-label">BACKTESTS</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><div id="stat-assets" class="stat-value">0</div><div class="stat-label">ASSETS</div></div>
+      </div>
+
+      <div class="filters card">
+        <div class="filter-row">
+          <select id="f-pair" class="filter-input"></select>
+          <select id="f-strategy" class="filter-input"></select>
+          <select id="f-tf" class="filter-input"></select>
+          <input id="f-pnl" class="filter-input" type="number" placeholder="Min P&L %" />
+          <input id="f-pf" class="filter-input" type="number" step="0.1" placeholder="Min PF" />
+          <input id="f-win" class="filter-input" type="number" placeholder="Min Win %" />
+          <input id="f-dd" class="filter-input" type="number" placeholder="Max DD %" />
+        </div>
+        <div class="filter-row">
+          <select id="f-sort" class="filter-input">
+            <option value="total_return_pct">Best profit</option>
+            <option value="profit_factor">Best profit factor</option>
+            <option value="win_rate_pct">Best win rate</option>
+            <option value="max_drawdown_pct_asc">Lowest drawdown</option>
+            <option value="created_at">Newest</option>
+          </select>
+          <button id="filter-btn" type="button">Filter</button>
+          <button id="clear-btn" type="button" class="ghost">Clear</button>
+          <span id="browse-count" class="status"></span>
+        </div>
+      </div>
+
+      <div id="browse-grid" class="browse-grid"></div>
+    </main>
+
+    <!-- ============================ REPORT VIEW ============================ -->
+    <main id="view-report" class="page hidden">
+      <!-- Run form -->
+      <section id="form-section" class="card form-panel hidden">
+        <div class="row between">
+          <h2>Run backtest</h2>
+          <button id="close-form" type="button" class="ghost">Close</button>
+        </div>
         <form id="run-form">
           <div class="form-grid">
             <label>Data provider<select name="data_provider" id="provider-select"></select></label>
@@ -46,17 +95,14 @@
             <label>Fee bps<input name="fee_bps" type="number" min="0" step="1" value="10" /></label>
             <label>Strategy<select name="strategy" id="strategy-select"></select></label>
           </div>
-
           <label id="file-path-label" class="hidden">
             Local file path
             <input name="file_path" id="file-path-input" placeholder="/root/data/my-bars.csv or .parquet" />
           </label>
-
           <div class="row between wrap">
             <label class="checkbox"><input name="refresh_data" type="checkbox" /> Force fresh data</label>
             <button id="load-example" type="button" class="ghost">Load custom example</button>
           </div>
-
           <div class="two-col">
             <label>Strategy params JSON
               <textarea id="params" rows="6">{
@@ -68,7 +114,6 @@
               <textarea id="custom_code" rows="6" placeholder="Only for custom_python. Define build_signals(df, params)."></textarea>
             </label>
           </div>
-
           <div class="row gap">
             <button id="run-button" type="submit">Run backtest</button>
             <span id="status" class="status">Idle</span>
@@ -76,24 +121,11 @@
         </form>
       </section>
 
-      <!-- ============================ RUN HISTORY ============================ -->
-      <section class="card history-panel">
-        <div class="row between">
-          <div class="section-title">RUN HISTORY <span class="muted-text">· auto-saved</span></div>
-          <span id="history-count" class="status"></span>
-        </div>
-        <div id="history-list" class="history-list"></div>
-      </section>
-
-      <!-- ============================ REPORT ============================ -->
+      <!-- Report -->
       <section id="report" class="report hidden">
-        <!-- Report header -->
         <div class="report-head card">
           <div class="rh-left">
-            <div class="rh-symbol">
-              <span id="rh-symbol">—</span>
-              <span id="rh-interval" class="chip"></span>
-            </div>
+            <div class="rh-symbol"><span id="rh-symbol">—</span><span id="rh-interval" class="chip"></span></div>
             <div id="rh-range" class="rh-range muted-text"></div>
             <div id="rh-strategy" class="rh-strategy muted-text"></div>
           </div>
@@ -103,17 +135,14 @@
           </div>
         </div>
 
-        <!-- Summary cards -->
         <div id="summary-cards" class="summary-cards"></div>
 
-        <!-- Equity curve -->
         <div class="card">
           <div class="section-title">EQUITY CURVE</div>
           <div id="equity-chart" class="chart tall"></div>
           <div id="drawdown-chart" class="chart short"></div>
         </div>
 
-        <!-- Returns + Profit structure -->
         <div class="two-col">
           <div class="card">
             <div class="section-title">RETURNS</div>
@@ -125,7 +154,6 @@
           </div>
         </div>
 
-        <!-- Risk-adjusted + Win/Loss -->
         <div class="two-col">
           <div class="card">
             <div class="section-title">RISK-ADJUSTED PERFORMANCE</div>
@@ -138,25 +166,21 @@
           </div>
         </div>
 
-        <!-- Significance verdict -->
         <div class="card">
           <div class="section-title">SIGNIFICANCE</div>
           <div id="significance" class="verdict"></div>
         </div>
 
-        <!-- P&L distribution -->
         <div class="card">
           <div class="section-title">P&amp;L DISTRIBUTION</div>
           <div id="dist-chart" class="chart short"></div>
         </div>
 
-        <!-- Performance details -->
         <div class="card">
           <div class="section-title">PERFORMANCE DETAILS</div>
           <div class="table-wrap"><table id="details-table" class="details-table"></table></div>
         </div>
 
-        <!-- Trade list -->
         <div class="card">
           <div class="section-title">TRADE LIST <span id="trade-count" class="muted-text"></span></div>
           <div class="table-wrap">
@@ -173,14 +197,13 @@
           </div>
         </div>
 
-        <!-- Source -->
         <div class="card">
           <div class="section-title">DATA SOURCE</div>
           <pre id="source"></pre>
         </div>
       </section>
 
-      <!-- ============================ LAB TOOLS ============================ -->
+      <!-- Lab tools -->
       <section class="card sweep-panel">
         <div class="row between">
           <div class="section-title">PARAMETER SWEEP</div>
