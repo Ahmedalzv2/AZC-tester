@@ -13,6 +13,7 @@ from engine import run_backtest
 from stats import significance
 from strategies import list_strategies
 from sweep import run_sweep
+from walkforward import walk_forward
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -42,6 +43,12 @@ class SweepRequest(BacktestRequest):
     # Maps param name -> list of values to grid over, e.g. {"fast": [5, 10]}.
     grid: dict[str, list[Any]] = Field(default_factory=dict)
     sort_by: str = Field(default="total_return_pct")
+    iterations: int = Field(default=1000, ge=100, le=10_000)
+
+
+class WalkForwardRequest(BacktestRequest):
+    # Fraction of the most-recent bars held out as out-of-sample.
+    oos_fraction: float = Field(default=0.3, ge=0.05, le=0.95)
     iterations: int = Field(default=1000, ge=100, le=10_000)
 
 
@@ -138,6 +145,39 @@ def sweep_endpoint(req: SweepRequest) -> dict[str, Any]:
             custom_code=req.custom_code,
             interval=req.interval,
             sort_by=req.sort_by,
+            iterations=req.iterations,
+        )
+        out["source"] = source_info
+        return out
+    except (ValueError, DataSourceError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/walkforward")
+def walkforward_endpoint(req: WalkForwardRequest) -> dict[str, Any]:
+    try:
+        df, source_info = fetch_history(
+            symbol=req.symbol.strip(),
+            interval=req.interval,
+            years=req.years,
+            refresh=req.refresh_data,
+            provider=req.data_provider,
+            file_path=req.file_path,
+            market=req.market,
+            timezone=req.timezone,
+            session=req.session,
+        )
+        out = walk_forward(
+            df=df,
+            strategy_name=req.strategy,
+            params=req.strategy_params,
+            oos_fraction=req.oos_fraction,
+            initial_cash=req.initial_cash,
+            fee_bps=req.fee_bps,
+            custom_code=req.custom_code,
+            interval=req.interval,
             iterations=req.iterations,
         )
         out["source"] = source_info
