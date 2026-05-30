@@ -8,10 +8,21 @@ search, not per run.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 from evolab.genome import Genome
+
+
+def write_json_atomic(path: Path, obj: Any) -> None:
+    """Write JSON via temp-file + os.replace so a concurrent reader (the
+    dashboard) never sees a half-written file. os.replace is atomic on the same
+    filesystem."""
+    path = Path(path)
+    tmp = path.with_suffix(path.suffix + f".tmp.{os.getpid()}")
+    tmp.write_text(json.dumps(obj))
+    os.replace(tmp, path)
 
 
 class Store:
@@ -32,7 +43,7 @@ class Store:
 
     def bump_trials(self, n: int) -> int:
         total = self.cumulative_trials() + int(n)
-        self._trials_path.write_text(json.dumps({"cumulative": total}))
+        write_json_atomic(self._trials_path, {"cumulative": total})
         return total
 
     def alpha_deflated(self) -> float:
@@ -52,7 +63,7 @@ class Store:
             return {"asset": asset, "generation": 0, "population": [], "champion": None}
 
     def save_state(self, asset: str, state: dict[str, Any]) -> None:
-        self._state_path(asset).write_text(json.dumps(state))
+        write_json_atomic(self._state_path(asset), state)
 
     # ── audit log ─────────────────────────────────────────────────────────
     def append_run(self, record: dict[str, Any]) -> None:

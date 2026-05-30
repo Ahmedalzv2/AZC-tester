@@ -1,0 +1,17 @@
+[Unit]
+Description=EvoLab strategy-search daemon
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/apps/backtest-lab
+ExecStart=/usr/bin/nice -n 15 /root/apps/backtest-lab/.venv/bin/python -m evolab.daemon
+Restart=on-failure
+RestartSec=10
+# Gentle by default; tune live without code changes.
+Environment=EVOLAB_GENS_PER_VISIT=3
+Environment=EVOLAB_SLEEP_SECONDS=30
+Environment=EVOLAB_POP=24
+
+[Install]
+WantedBy=multi-user.target
