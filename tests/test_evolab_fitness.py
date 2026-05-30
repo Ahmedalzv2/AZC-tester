@@ -40,6 +40,25 @@ def test_strong_signal_passes_champion_gate_directly():
     ) is True
 
 
+def test_assess_returns_valid_verdict_shape():
+    bars = _trending_bars(1600, 0.001)
+    is_bars, oos_bars = bars[:1100], bars[1100:]
+    out = fitness.assess("donchian_break",
+                         {"don": 20, "atrN": 14, "atrMult": 2.0, "trail": 3,
+                          "erMin": 0.0, "regimeN": 20},
+                         is_bars, oos_bars)
+    assert out["verdict"] in ("real", "marginal", "noise")
+    assert out["family"] == "donchian_break"
+    assert set(out["oos"]) == {"n", "meanR", "t", "p", "holds"}
+    assert out["deflation"].startswith("none")  # single hypothesis -> no deflation
+
+
+def test_assess_rejects_unknown_family():
+    import pytest as _pytest
+    with _pytest.raises(ValueError):
+        fitness.assess("not_a_family", {}, [], [])
+
+
 def test_deflation_tightens_with_trials():
     series = np.concatenate([np.full(50, 0.05), np.full(50, -0.01)])
     p = fitness._pvalue(series)

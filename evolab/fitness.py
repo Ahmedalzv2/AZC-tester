@@ -75,3 +75,46 @@ def evaluate(genome: Genome, splits: tuple[list[Bar], list[Bar]], alpha_deflated
         oos_n=int(oos_rs.size), oos_mean=oos_mean, oos_t=oos_t, oos_p=oos_p,
         is_champion_candidate=candidate,
     )
+
+
+def assess(family: str, params: dict, is_bars: list[Bar], oos_bars: list[Bar]) -> dict:
+    """One-off honest verdict for an externally-submitted strategy (e.g. AZC).
+
+    A single submitted strategy is ONE hypothesis, not a multiple-testing search,
+    so there is NO cumulative deflation here — just standard significance on the
+    fee-accurate out-of-sample tape. Still only a hypothesis until a live forward
+    test confirms it.
+    """
+    if family not in SIGNALS:
+        raise ValueError(f"unknown family '{family}'; known: {sorted(SIGNALS)}")
+    g = Genome(family, dict(params))
+    is_rs = np.asarray(_net_rs(is_bars, g), dtype=float)
+    oos_rs = np.asarray(_net_rs(oos_bars, g), dtype=float)
+
+    is_mean = float(is_rs.mean()) if is_rs.size else 0.0
+    oos_mean = float(oos_rs.mean()) if oos_rs.size else 0.0
+    is_t = _tstat(is_rs)
+    oos_t, oos_p = _tstat(oos_rs), _pvalue(oos_rs)
+
+    holds = bool(oos_rs.size >= MIN_OOS_TRADES and oos_mean > 0 and is_mean > 0
+                 and oos_mean >= 0.5 * is_mean)
+    real = bool(oos_rs.size >= MIN_OOS_TRADES and oos_mean > 0 and is_mean > 0
+                and oos_t >= 2.0 and oos_p < 0.05)
+    if real:
+        verdict = "real"
+    elif oos_rs.size >= MIN_OOS_TRADES and oos_mean > 0 and oos_t >= 1.0:
+        verdict = "marginal"
+    else:
+        verdict = "noise"
+
+    return {
+        "verdict": verdict,
+        "family": family,
+        "net_R_oos": round(oos_mean * oos_rs.size, 4),
+        "is": {"n": int(is_rs.size), "meanR": round(is_mean, 4), "t": round(is_t, 2)},
+        "oos": {"n": int(oos_rs.size), "meanR": round(oos_mean, 4),
+                "t": round(oos_t, 2), "p": round(oos_p, 4), "holds": holds},
+        "fees": "all-taker (engine_bracket TAKER model)",
+        "deflation": "none (single hypothesis — not a multiple-testing search)",
+        "note": "A verdict, not a green light. Still only a hypothesis until a live forward test.",
+    }
