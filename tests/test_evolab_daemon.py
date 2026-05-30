@@ -8,7 +8,8 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from engine_bracket import Bar
-from evolab.daemon import one_cycle
+from evolab import daemon as daemon_mod
+from evolab.daemon import one_cycle, resolve_assets
 from evolab.store import Store
 
 
@@ -21,6 +22,19 @@ def _bars(n: int, seed: int) -> list[Bar]:
         c = px * (1 + rng.gauss(0, 0.003))
         out.append(Bar(t=i * 3600_000, o=px, h=max(px, c) * 1.001, l=min(px, c) * 0.999, c=c))
     return out
+
+
+def test_resolve_assets_defaults_to_full_basket(monkeypatch):
+    monkeypatch.delenv("EVOLAB_ASSETS", raising=False)
+    monkeypatch.setattr(daemon_mod.data, "available_assets", lambda: ["DOGE", "SOL", "SUI", "XRP"])
+    assert resolve_assets() == ["DOGE", "SOL", "SUI", "XRP"]
+
+
+def test_resolve_assets_env_override_scopes_and_filters_unmounted(monkeypatch):
+    monkeypatch.setattr(daemon_mod.data, "available_assets", lambda: ["DOGE", "SOL", "SUI", "XRP"])
+    monkeypatch.setenv("EVOLAB_ASSETS", "sui, sol, FAKECOIN")
+    # case-insensitive, keeps order, drops the unmounted typo
+    assert resolve_assets() == ["SUI", "SOL"]
 
 
 def test_one_cycle_advances_state_and_writes_heartbeat(tmp_path):

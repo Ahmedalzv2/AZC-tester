@@ -37,6 +37,19 @@ def _request_stop(*_: Any) -> None:
     _stop = True
 
 
+def resolve_assets() -> list[str]:
+    """Which assets the daemon searches. Default = every mounted tape
+    (data.available_assets, now the full 25-symbol basket). An explicit
+    EVOLAB_ASSETS="SOL,SUI,XRP" env var overrides to a scoped subset, keeping
+    only entries that actually have a fixture mounted (silently drops typos)."""
+    override = os.environ.get("EVOLAB_ASSETS", "").strip()
+    if not override:
+        return data.available_assets()
+    mounted = set(data.available_assets())
+    want = [a.strip().upper() for a in override.split(",") if a.strip()]
+    return [a for a in want if a in mounted]
+
+
 def _now_ms() -> int:
     return int(time.time() * 1000)
 
@@ -90,9 +103,9 @@ def run_daemon() -> int:
     signal.signal(signal.SIGTERM, _request_stop)
     signal.signal(signal.SIGINT, _request_stop)
 
-    assets = data.available_assets()
+    assets = resolve_assets()
     if not assets:
-        print("[evolab] no fixtures mounted — nothing to search; exiting", flush=True)
+        print("[evolab] no assets to search (no fixtures mounted, or EVOLAB_ASSETS matched none); exiting", flush=True)
         return 1
 
     store = Store(STATE_DIR)
