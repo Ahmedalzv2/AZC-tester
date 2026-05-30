@@ -5,7 +5,9 @@ in Task 9) just resolves an asset name to bars and calls it.
 """
 from __future__ import annotations
 
+import argparse
 import random
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -93,3 +95,42 @@ def run_search(
         "best_is_score": round(best_is_score, 5) if best_is_score != float("-inf") else None,
         "trials_cumulative": store.cumulative_trials(),
     }
+
+
+def resolve_bars(asset: str) -> list[Bar]:
+    if asset not in data.MARKETS:
+        raise SystemExit(f"Unknown asset '{asset}'. Available: {', '.join(data.available_assets()) or '(none mounted)'}")
+    if asset not in data.available_assets():
+        raise SystemExit(f"Asset '{asset}' has no fixture mounted at {data.FIX}")
+    return data.load_asset(asset)
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="evolab.search", description="Evolve strategies for one crypto-perp asset.")
+    ap.add_argument("asset")
+    ap.add_argument("--generations", type=int, default=20)
+    ap.add_argument("--pop", type=int, default=40)
+    ap.add_argument("--seed", type=int, default=0)
+    args = ap.parse_args(argv)
+
+    bars = resolve_bars(args.asset)
+    store = Store(STATE_DIR)
+    result = run_search(
+        args.asset, bars, generations=args.generations, pop_size=args.pop,
+        seed=args.seed, store=store,
+    )
+    champ = result["champion"]
+    best = result["best_is_score"]
+    best_str = f"{best:+.4f}" if best is not None else "n/a"
+    print(f"{result['asset']}: gen={result['generation']} "
+          f"trials={result['trials_cumulative']} best_IS={best_str}")
+    if champ:
+        print(f"  CHAMPION {champ['family']} {champ['params']} "
+              f"OOS_t={champ['oos_t']:+.2f} OOS_p={champ['oos_p']:.4f}")
+    else:
+        print("  no champion survives the deflated OOS bar (honest null result)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

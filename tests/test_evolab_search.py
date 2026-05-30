@@ -45,3 +45,46 @@ def test_same_seed_is_deterministic(tmp_path):
     r2 = run_search("NOISE", bars, generations=8, pop_size=16, seed=3, store=Store(tmp_path / "b"))
     assert r1["best_is_score"] == r2["best_is_score"]
     assert r1["trials_cumulative"] == r2["trials_cumulative"]
+
+
+from evolab import fitness as _fit
+
+
+def _trending(n: int, drift: float, seed: int) -> list[Bar]:
+    """Persistent uptrend with mild noise -> trend families should dominate IS."""
+    rng = random.Random(seed)
+    px = 100.0
+    bars = []
+    for i in range(n):
+        px *= (1 + drift + rng.gauss(0, 0.002))
+        o = px
+        c = px * (1 + drift)
+        bars.append(Bar(t=i * 3600_000, o=o, h=max(o, c) * 1.001, l=min(o, c) * 0.999, c=c))
+    return bars
+
+
+def test_trending_data_best_genome_is_a_trend_family(tmp_path):
+    bars = _trending(2500, drift=0.0015, seed=11)
+    store = Store(tmp_path)
+    run_search("TREND", bars, generations=15, pop_size=24, seed=2, store=store)
+    from evolab import data as _data
+    from evolab.store import genome_from_dict
+    splits = _data.split(bars)
+    state = store.load_state("TREND")
+    best = max(
+        (_fit.evaluate(genome_from_dict(d), splits, 1.0) for d in state["population"]),
+        key=lambda r: r.is_score,
+    )
+    assert best.genome.family in _fit.TREND_FAMILIES
+
+
+def test_cli_runs_on_a_real_asset(tmp_path, monkeypatch, capsys):
+    import evolab.search as search_mod
+    monkeypatch.setattr(search_mod, "STATE_DIR", tmp_path)
+    from evolab import data as _data
+    avail = _data.available_assets()
+    if not avail:
+        pytest.skip("no crypto fixtures mounted")
+    rc = search_mod.main([avail[0], "--generations", "1", "--pop", "8", "--seed", "1"])
+    assert rc == 0
+    assert avail[0] in capsys.readouterr().out
