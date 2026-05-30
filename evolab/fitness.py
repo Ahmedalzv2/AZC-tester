@@ -36,14 +36,7 @@ class FitnessResult:
 
 def _tstat(arr: np.ndarray) -> float:
     a = np.asarray(arr, dtype=float)
-    if a.size < 2:
-        return 0.0
-    # NW variance is 0 for a constant series; a constant positive mean is
-    # infinitely significant (SE→0, t→+∞), so return +inf rather than 0.
-    t = newey_west_tstat(a, lags=_default_lags(a.size))
-    if t == 0.0 and float(a.mean()) > 0:
-        return float("inf")
-    return float(t)
+    return float(newey_west_tstat(a, lags=_default_lags(a.size))) if a.size >= 2 else 0.0
 
 
 def _pvalue(arr: np.ndarray) -> float:
