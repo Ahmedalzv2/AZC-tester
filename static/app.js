@@ -16,6 +16,10 @@ const sweepSortBox = document.getElementById('sweep-sort');
 const sweepButton = document.getElementById('sweep-button');
 const sweepStatusBox = document.getElementById('sweep-status');
 const sweepBody = document.getElementById('sweep-body');
+const wfOosBox = document.getElementById('wf-oos');
+const wfButton = document.getElementById('wf-button');
+const wfStatusBox = document.getElementById('wf-status');
+const wfResultBox = document.getElementById('wf-result');
 
 let strategies = {};
 let providers = {};
@@ -256,6 +260,65 @@ function renderSweep(out) {
   }).join('');
 }
 
+function legCard(title, leg) {
+  const m = leg.metrics;
+  const s = leg.significance || {};
+  const sigCls = s.significant ? 'good' : 'bad';
+  return `
+    <div class="wf-leg">
+      <div class="wf-leg-title">${title}</div>
+      <div class="wf-leg-rows">
+        <span>Return %</span><b>${m.total_return_pct}</b>
+        <span>Sharpe</span><b>${m.sharpe}</b>
+        <span>Max DD %</span><b>${m.max_drawdown_pct}</b>
+        <span>Trades</span><b>${m.trade_count}</b>
+        <span>t (HAC)</span><b>${s.tstat ?? '-'}</b>
+        <span>p-value</span><b>${s.pvalue ?? '-'}</b>
+      </div>
+      <div class="wf-leg-verdict ${sigCls}">${s.significant ? 'significant' : 'not significant'}</div>
+    </div>
+  `;
+}
+
+function renderWalkForward(out) {
+  const decay = out.decay;
+  const held = out.holds_out_of_sample;
+  const cls = held ? 'good' : 'bad';
+  const verdict = held ? 'HOLDS OUT OF SAMPLE' : 'DID NOT HOLD';
+  wfResultBox.innerHTML = `
+    <div class="wf-banner ${cls}">
+      <span class="verdict-tag">${verdict}</span>
+      <span class="verdict-stat">OOS decay&nbsp;<b>${decay}</b> pts</span>
+      <span class="verdict-stat">split @ bar&nbsp;${out.split_index}</span>
+    </div>
+    <div class="wf-legs">
+      ${legCard('In-sample', out.in_sample)}
+      ${legCard('Out-of-sample', out.out_sample)}
+    </div>
+    <div class="verdict-note">Decay = OOS return − IS return. Strongly negative means the in-sample edge did not survive on unseen data — the overfit tell.</div>
+  `;
+}
+
+async function runWalkForward() {
+  wfStatusBox.textContent = 'Running...';
+  wfButton.disabled = true;
+  try {
+    const payload = buildBasePayload();
+    payload.oos_fraction = Number(wfOosBox.value);
+    const out = await fetchJson('/api/walkforward', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    renderWalkForward(out);
+    wfStatusBox.textContent = 'Done';
+  } catch (error) {
+    wfStatusBox.textContent = `Error: ${error.message}`;
+  } finally {
+    wfButton.disabled = false;
+  }
+}
+
 async function runSweep() {
   sweepStatusBox.textContent = 'Sweeping...';
   sweepButton.disabled = true;
@@ -281,6 +344,7 @@ strategySelect?.addEventListener('change', (event) => syncParamsForStrategy(even
 providerSelect?.addEventListener('change', syncProviderFields);
 loadExampleButton?.addEventListener('click', loadCustomExample);
 sweepButton?.addEventListener('click', runSweep);
+wfButton?.addEventListener('click', runWalkForward);
 form?.addEventListener('submit', runBacktest);
 
 Promise.all([loadProviders(), loadStrategies()])
