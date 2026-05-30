@@ -83,17 +83,22 @@ def _clamp(spec: ParamSpec, value: Any) -> Any:
     if spec.kind == "choice":
         return value if value in spec.choices else spec.choices[0]
     value = max(spec.low, min(spec.high, value))
+    # Snap to the nearest grid point so post-mutation values can't drift off the
+    # discrete search grid (keeps genome_key dedup meaningful).
+    steps = round((value - spec.low) / spec.step)
+    value = spec.low + steps * spec.step
     return int(round(value)) if spec.kind == "int" else round(value, 4)
 
 
 def _repair(family: str, params: dict[str, Any]) -> dict[str, Any]:
-    """Enforce cross-param constraints after sampling/mutation."""
+    """Enforce cross-param constraints. Returns a NEW dict so a caller's parent
+    params are never mutated in place (crossover/mutation share param values)."""
+    params = dict(params)
     if family == "ma_cross" and params["fast"] >= params["slow"]:
-        params["slow"] = min(200, params["fast"] + 25)
-        if params["fast"] >= params["slow"]:
-            params["fast"] = max(5, params["slow"] - 25)
+        # Smallest on-grid slow (step 25) strictly greater than fast (max 50).
+        params["slow"] = 50 if params["fast"] < 50 else 75
     if family == "rsi_reversion" and params["lower"] >= params["upper"]:
-        params["lower"], params["upper"] = 30, 70
+        params["lower"], params["upper"] = 30, 70  # schema-legal centres
     return params
 
 
