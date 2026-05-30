@@ -145,3 +145,18 @@ Response keys an AZC learning loop cares about:
   `metrics.report.sharpe`, `metrics.report.sortino`, `metrics.report.max_drawdown_pct`
 - `significance.significant` (bool), `significance.tstat`, `significance.pvalue`
 - `saved.id` — the run id, openable in Browse / `GET /api/runs/{id}`
+
+### Reading outcomes back (AZC follows results from the site)
+
+Send a `label` (the AZC strategy name) on the request, then read it back by name —
+no auth needed for the read endpoints:
+
+- `POST /api/backtest` with `"label": "btc-donchian-breakout-v1"` tags the run.
+- `GET /api/runs?label=btc-donchian-breakout-v1` → all runs for that strategy
+  (newest first), each summary carrying `total_return_pct`, `profit_factor`,
+  `win_rate_pct`, `max_drawdown_pct`, `significant`, and the run `id`.
+- `GET /api/runs/{id}` → the full report for one run.
+- Filters also accept `?symbol=` and `?strategy=`.
+
+This is the simple loop: AZC names a strategy, the tester runs it, AZC polls
+`/api/runs?label=...` to follow the outcome straight from the same site.

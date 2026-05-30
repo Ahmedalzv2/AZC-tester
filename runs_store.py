@@ -69,6 +69,8 @@ def _summary(run_id: str, created_at: float, request: dict[str, Any], response: 
         "net_pnl": report.get("net_pnl"),
         "profit_factor": report.get("profit_factor"),
         "significant": (response.get("significance") or {}).get("significant"),
+        "label": request.get("label"),
+        "tags": request.get("tags") or [],
         "spark": _spark(response),
     }
 
@@ -89,8 +91,16 @@ def save_run(request: dict[str, Any], response: dict[str, Any]) -> dict[str, Any
     return summary
 
 
-def list_runs() -> list[dict[str, Any]]:
-    return _load_index()
+def list_runs(label: str | None = None, symbol: str | None = None, strategy: str | None = None) -> list[dict[str, Any]]:
+    """Saved-run summaries, newest first, optionally filtered (for AZC read-back)."""
+    entries = _load_index()
+    if label:
+        entries = [e for e in entries if (e.get("label") or "").lower() == label.lower()]
+    if symbol:
+        entries = [e for e in entries if e.get("symbol") == symbol]
+    if strategy:
+        entries = [e for e in entries if e.get("strategy") == strategy]
+    return entries
 
 
 def get_run(run_id: str) -> dict[str, Any] | None:

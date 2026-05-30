@@ -539,10 +539,10 @@ function renderBrowse() {
     return `
       <div class="strat-card" data-id="${r.id}">
         <div class="sc-head">
-          <div class="sc-title">${humanStrategy(r.strategy)}</div>
+          <div class="sc-title">${r.label ? r.label : humanStrategy(r.strategy)}</div>
           ${sig}
         </div>
-        <div class="sc-sub">${r.symbol ?? '—'} · ${r.interval ?? ''}</div>
+        <div class="sc-sub">${r.symbol ?? '—'} · ${r.interval ?? ''}${r.label ? ' · ' + humanStrategy(r.strategy) : ''}</div>
         <div class="sc-spark">${sparkSvg(r.spark, up)}</div>
         <div class="sc-kpis">
           <div><div class="k-label">NET P&L %</div><div class="k-val ${signClass(r.total_return_pct)}">${fmtPct(r.total_return_pct)}</div></div>

@@ -71,6 +71,10 @@ def _payload(args: argparse.Namespace, code: str) -> dict:
     }
     if args.file_path:
         payload["file_path"] = args.file_path
+    if args.label:
+        payload["label"] = args.label
+    if args.tags:
+        payload["tags"] = [t.strip() for t in args.tags.split(",") if t.strip()]
     return payload
 
 
@@ -80,6 +84,7 @@ def _summary(resp: dict) -> dict:
     sig = resp.get("significance", {}) or {}
     return {
         "run_id": (resp.get("saved") or {}).get("id"),
+        "label": (resp.get("saved") or {}).get("label"),
         "symbol": (resp.get("source") or {}).get("symbol"),
         "total_return_pct": metrics.get("total_return_pct"),
         "profit_factor": report.get("profit_factor"),
@@ -118,6 +123,8 @@ def main() -> None:
     ap.add_argument("--params", default="{}", help="JSON dict of strategy params")
     ap.add_argument("--initial-cash", dest="initial_cash", type=float, default=10000)
     ap.add_argument("--fee-bps", dest="fee_bps", type=float, default=7)
+    ap.add_argument("--label", default=None, help="AZC strategy name, stored on the run for read-back")
+    ap.add_argument("--tags", default=None, help="comma-separated tags stored on the run")
     ap.add_argument("--walkforward", action="store_true", help="also run an out-of-sample holdout")
     args = ap.parse_args()
 

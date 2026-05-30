@@ -17,6 +17,9 @@ great return with a weak t-stat is noise, and you must say so.
 ## 0. Parse the prompt
 
 Extract (see `docs/azc-strategy-prompt.md` for the full template):
+- **Name** — the AZC-assigned strategy id (e.g. `btc-donchian-breakout-v1`). Pass it
+  as `--label` on every run so AZC can read this strategy back via
+  `GET /api/runs?label=<Name>`. If the prompt has no Name, make a stable slug.
 - **symbol** + **data_provider** (Yahoo `BTC-USD`/`SPY`, or `local_file` + `--file-path`)
 - **interval** (`1d`/`1h`/`15m`/`5m`) and **years** (default 5)
 - the **hypothesis / entry-exit logic**, any **parameters to explore**,
@@ -51,8 +54,12 @@ Rules:
 ```bash
 python scripts/azc_client.py --symbol <SYM> --interval <TF> --years <N> \
   --provider <yahoo|local_file> [--file-path <path>] \
-  --strategy-file /tmp/strat.py --params '{"...":...}' --fee-bps <bps> --walkforward
+  --strategy-file /tmp/strat.py --params '{"...":...}' --fee-bps <bps> \
+  --label "<Name>" --walkforward
 ```
+
+Pass `--label "<Name>"` on **every** attempt so all variants are tagged with the
+AZC strategy name and readable back via `GET /api/runs?label=<Name>`.
 
 The client reads `TESTER_URL` (default `http://127.0.0.1:3016`) and `AZC_API_KEY`
 (env, or falls back to `<gallant>/.env`). It prints JSON with the backtest

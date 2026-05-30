@@ -55,6 +55,10 @@ class BacktestRequest(BaseModel):
     initial_cash: float = Field(default=10_000, gt=0)
     fee_bps: float = Field(default=10, ge=0)
     custom_code: str | None = None
+    # AZC-assigned strategy name + optional tags, so the platform can read its
+    # own strategy back by name via GET /api/runs?label=...
+    label: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
 
 class SweepRequest(BacktestRequest):
@@ -146,8 +150,9 @@ def backtest(req: BacktestRequest) -> dict[str, Any]:
 
 
 @app.get("/api/runs")
-def runs() -> dict[str, Any]:
-    return {"runs": list_runs()}
+def runs(label: str | None = None, symbol: str | None = None, strategy: str | None = None) -> dict[str, Any]:
+    # AZC reads its strategies back by the name it assigned: GET /api/runs?label=...
+    return {"runs": list_runs(label=label, symbol=symbol, strategy=strategy)}
 
 
 @app.get("/api/runs/{run_id}")
