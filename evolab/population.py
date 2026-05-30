@@ -18,7 +18,9 @@ def select(results: list[Any], elite_k: int, tourn_k: int, rng: random.Random) -
         contenders = rng.sample(pool, k=min(3, len(pool)))
         winner = max(contenders, key=lambda r: r.is_score)
         survivors.append(winner.genome)
-        pool.remove(winner)
+        # Identity, not equality: two result objects can be structurally equal
+        # (same score), so list.remove could drop the wrong one.
+        pool = [r for r in pool if r is not winner]
     return survivors
 
 
@@ -50,6 +52,8 @@ def evolve_generation(
             child = crossover(a, b, rng) if a.family == b.family else mutate(rng.choice([a, b]), rng)
             _add(mutate(child, rng))
     # If dedup couldn't reach pop_size, top up with randoms (guaranteed legal).
+    # Safe/fast: each family's grid (>=576 combos) dwarfs pop_size (<=40), so
+    # collisions are rare and this terminates in expected O(1) extra draws.
     while len(next_pop) < pop_size:
         _add(random_genome(rng))
     return next_pop[:pop_size]
