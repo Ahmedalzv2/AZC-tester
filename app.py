@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from data_source import DataSourceError, available_providers, fetch_history
 from engine import run_backtest
+from runs_store import delete_run, get_run, list_runs, save_run
 from stats import significance
 from strategies import list_strategies
 from sweep import run_sweep
@@ -106,7 +107,7 @@ def backtest(req: BacktestRequest) -> dict[str, Any]:
             }
             for idx, row in df.tail(400).iterrows()
         ]
-        return {
+        response = {
             "metrics": result.metrics,
             "curve": result.curve,
             "trades": result.trades,
@@ -115,10 +116,34 @@ def backtest(req: BacktestRequest) -> dict[str, Any]:
             "significance": result.metrics.get("significance") or significance(result.curve),
             "custom_code": req.custom_code or "",
         }
+        # Every successful run is saved automatically — research is never lost.
+        try:
+            response["saved"] = save_run(req.model_dump(), response)
+        except Exception:  # persistence must never break a backtest
+            response["saved"] = None
+        return response
     except (ValueError, DataSourceError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/runs")
+def runs() -> dict[str, Any]:
+    return {"runs": list_runs()}
+
+
+@app.get("/api/runs/{run_id}")
+def run_detail(run_id: str) -> dict[str, Any]:
+    record = get_run(run_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return record
+
+
+@app.delete("/api/runs/{run_id}")
+def run_delete(run_id: str) -> dict[str, Any]:
+    return {"deleted": delete_run(run_id)}
 
 
 @app.post("/api/sweep")

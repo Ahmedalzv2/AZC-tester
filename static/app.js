@@ -24,6 +24,8 @@ const wfOosBox = document.getElementById('wf-oos');
 const wfButton = document.getElementById('wf-button');
 const wfStatusBox = document.getElementById('wf-status');
 const wfResultBox = document.getElementById('wf-result');
+const historyList = document.getElementById('history-list');
+const historyCount = document.getElementById('history-count');
 
 let strategies = {};
 let providers = {};
@@ -400,12 +402,81 @@ async function runBacktest(event) {
     const ret = result.metrics.total_return_pct;
     runBadge.textContent = fmtPct(ret);
     runBadge.className = `pill ${signClass(ret)}`;
+    loadHistory();  // the run was auto-saved server-side; refresh the list
   } catch (error) {
     statusBox.textContent = `Error: ${error.message}`;
     runBadge.textContent = 'Error';
     runBadge.className = 'pill bad';
   }
 }
+
+// ---------------- run history (auto-saved) ----------------
+function renderHistory(runs) {
+  historyCount.textContent = runs.length ? `${runs.length} saved` : '';
+  if (!runs.length) {
+    historyList.innerHTML = '<div class="muted-text">No saved runs yet — every backtest you run is saved here automatically.</div>';
+    return;
+  }
+  historyList.innerHTML = runs.map((r) => {
+    const when = r.created_at ? new Date(r.created_at * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+    const sig = r.significant ? '<span class="hist-sig good">real</span>' : '<span class="hist-sig bad">noise</span>';
+    return `
+      <div class="history-row" data-id="${r.id}">
+        <div class="hist-main">
+          <span class="hist-symbol">${r.symbol ?? '—'}</span>
+          <span class="chip">${r.interval ?? ''}</span>
+          <span class="hist-strategy">${r.strategy ?? ''}</span>
+          ${sig}
+        </div>
+        <div class="hist-stats">
+          <span class="num ${signClass(r.total_return_pct)}">${fmtPct(r.total_return_pct)}</span>
+          <span class="hist-stat">DD ${fmtPct(r.max_drawdown_pct)}</span>
+          <span class="hist-stat">PF ${fmtNum(r.profit_factor, 2)}</span>
+          <span class="hist-stat">${r.trade_count ?? 0} trades</span>
+          <span class="hist-when">${when}</span>
+          <button class="hist-del ghost" data-del="${r.id}" title="Delete run">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function loadHistory() {
+  try {
+    const out = await fetchJson('/api/runs');
+    renderHistory(out.runs || []);
+  } catch (error) {
+    historyList.innerHTML = `<div class="muted-text">History unavailable: ${error.message}</div>`;
+  }
+}
+
+async function openRun(id) {
+  try {
+    const record = await fetchJson(`/api/runs/${id}`);
+    renderReport(record.response);
+    const ret = record.response.metrics.total_return_pct;
+    runBadge.textContent = fmtPct(ret);
+    runBadge.className = `pill ${signClass(ret)}`;
+    reportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    statusBox.textContent = `Error opening run: ${error.message}`;
+  }
+}
+
+async function deleteRun(id) {
+  try {
+    await fetchJson(`/api/runs/${id}`, { method: 'DELETE' });
+    loadHistory();
+  } catch (error) {
+    statusBox.textContent = `Error deleting run: ${error.message}`;
+  }
+}
+
+historyList?.addEventListener('click', (event) => {
+  const del = event.target.closest('[data-del]');
+  if (del) { event.stopPropagation(); deleteRun(del.getAttribute('data-del')); return; }
+  const row = event.target.closest('.history-row');
+  if (row) openRun(row.getAttribute('data-id'));
+});
 
 // ---------------- strategy / provider config ----------------
 function syncParamsForStrategy(name) {
@@ -537,5 +608,5 @@ form?.addEventListener('submit', runBacktest);
 toggleFormButton?.addEventListener('click', () => formSection.classList.toggle('hidden'));
 
 Promise.all([loadProviders(), loadStrategies()])
-  .then(() => runBacktest())
+  .then(() => { loadHistory(); return runBacktest(); })
   .catch((error) => { statusBox.textContent = `Boot error: ${error.message}`; });

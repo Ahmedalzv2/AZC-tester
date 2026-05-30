@@ -28,3 +28,7 @@ coverage.xml
 
 # Why: fetched market data cache is reproducible local state, not source.
 data_cache/
+
+# Why: saved backtest runs are local research history, not source.
+runs/
+

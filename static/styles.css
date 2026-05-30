@@ -248,6 +248,31 @@ button.ghost { background: transparent; color: var(--text); border: 1px solid va
 .wf-leg-verdict.good { color: var(--good); }
 .wf-leg-verdict.bad { color: var(--bad); }
 
+/* ---------------- Run history ---------------- */
+.history-list { display: grid; gap: 8px; }
+.history-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 14px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--panel-2);
+  cursor: pointer; transition: border-color 0.12s, background 0.12s;
+}
+.history-row:hover { border-color: var(--accent); background: rgba(124,92,252,0.06); }
+.hist-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.hist-symbol { font-weight: 700; }
+.hist-strategy { color: var(--muted); font-size: 13px; }
+.hist-sig { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; }
+.hist-sig.good { color: var(--good); }
+.hist-sig.bad { color: var(--bad); }
+.hist-stats { display: flex; align-items: center; gap: 16px; font-variant-numeric: tabular-nums; }
+.hist-stat { color: var(--muted); font-size: 13px; }
+.hist-when { color: var(--muted); font-size: 12px; }
+.hist-del { width: auto; padding: 4px 9px; font-size: 12px; color: var(--muted); }
+.hist-del:hover { color: var(--bad); border-color: var(--bad); }
+@media (max-width: 1024px) {
+  .history-row { flex-direction: column; align-items: flex-start; }
+  .hist-stats { flex-wrap: wrap; gap: 10px; }
+}
+
 pre { white-space: pre-wrap; margin: 0; color: var(--muted); font-size: 12.5px; font-family: ui-monospace, monospace; }
 
 /* ---------------- Responsive ---------------- */
