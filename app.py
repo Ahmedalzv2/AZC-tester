@@ -168,6 +168,18 @@ def run_delete(run_id: str) -> dict[str, Any]:
     return {"deleted": delete_run(run_id)}
 
 
+class IngestRequest(BaseModel):
+    # A PRE-COMPUTED run promoted from the lab (e.g. an EvoLab champion scored
+    # via simulate_signal). Stored as-is; no strategy code is executed here.
+    request_payload: dict[str, Any] = Field(default_factory=dict)
+    response_payload: dict[str, Any] = Field(default_factory=dict)
+
+
+@app.post("/api/runs/ingest", dependencies=[Depends(require_api_key)])
+def ingest_run(req: IngestRequest) -> dict[str, Any]:
+    return {"saved": save_run(req.request_payload, req.response_payload)}
+
+
 @app.post("/api/sweep", dependencies=[Depends(require_api_key)])
 def sweep_endpoint(req: SweepRequest) -> dict[str, Any]:
     try:
