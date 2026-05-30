@@ -13,12 +13,37 @@ from engine_bracket import Bar, resample_positional
 
 FIX = Path("/root/apps/ict-autopilot/tests/fixtures")
 
-# asset -> (fixture filename, resample period in source bars). 5y hourly -> 4h.
-MARKETS: dict[str, tuple[str, int]] = {
-    "DOGE": ("DOGE-1825d-Min60.json", 4),
-    "SOL": ("SOL-1825d-Min60.json", 4),
-    "XRP": ("XRP-1825d-Min60.json", 4),
-}
+
+def _discover_markets() -> dict[str, tuple[str, int]]:
+    """Auto-map every mounted hourly (Min60) fixture to asset -> (file, 4h).
+
+    The gateway used to be hardcoded to SOL/DOGE/XRP, but ~30 symbols are
+    mounted. Discover them all; when a symbol has multiple tapes (e.g. SOL has
+    both 1825d and 1095d), keep the DEEPEST (most days) for the most OOS power.
+    Stem shape: "<SYM>-<N>d-Min60". Period 4 = hourly -> 4h (AZC cadence).
+    """
+    best: dict[str, tuple[int, str]] = {}
+    if not FIX.exists():
+        return {}
+    for path in sorted(FIX.glob("*-Min60.json")):
+        stem = path.stem  # e.g. SOL-1825d-Min60
+        parts = stem.split("-")
+        if len(parts) < 3:
+            continue
+        sym = parts[0].upper()
+        days_tok = parts[1]
+        try:
+            days = int(days_tok.rstrip("dD"))
+        except ValueError:
+            continue
+        if sym not in best or days > best[sym][0]:
+            best[sym] = (days, path.name)
+    return {sym: (fname, 4) for sym, (days, fname) in sorted(best.items())}
+
+
+# asset -> (fixture filename, resample period in source bars). hourly -> 4h.
+# Auto-discovered from the mounted tape so the gateway covers the full basket.
+MARKETS: dict[str, tuple[str, int]] = _discover_markets()
 
 # All-taker fees: the honest, fundable assumption (see playbook).
 TAKER: dict[str, bool | float | int] = {

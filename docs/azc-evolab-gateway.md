@@ -35,7 +35,7 @@ Base URL: `http://localhost:3015` (same host) or
   - Other families: `ts_momentum`, `ma_cross`, `rsi_reversion`, `bollinger_break`.
 - `params` — family params. Fees (all-taker) and trail-exit `rr` are applied by
   the engine; you do not send fee params.
-- `asset` — a crypto-perp with mounted tape (currently `SOL`, `DOGE`, `XRP`).
+- `asset` — a crypto-perp with mounted tape (auto-discovered — 25 symbols incl. BTC/ETH/SOL/DOGE/XRP/SUI/…; GET /api/evolab/assets for the live list).
 - `oos_fraction` — held-out fraction (default 0.30).
 
 ### Response
