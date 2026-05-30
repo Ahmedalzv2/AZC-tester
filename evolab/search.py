@@ -39,6 +39,8 @@ def run_search(
         population = [random_genome(rng) for _ in range(pop_size)]
     champion = state.get("champion")
     generation = int(state.get("generation", 0))
+    # Run-local (reset each call), not the lifetime best — the persisted champion
+    # is the durable record across resumed runs.
     best_is_score = float("-inf")
 
     for _ in range(generations):

@@ -4,6 +4,8 @@ from pathlib import Path
 import random
 import sys
 
+import pytest
+
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from engine_bracket import Bar
@@ -23,11 +25,18 @@ def _random_walk(n: int, seed: int) -> list[Bar]:
     return bars
 
 
-def test_noise_yields_zero_champions(tmp_path):
-    bars = _random_walk(2500, seed=42)
+# Multiple (noise-tape, genome-draw) seeds so the guarantee isn't single-seed
+# luck. The gate is provably sealed from ~gen 5 (alpha falls below the bootstrap
+# p-floor 1/2001); gens 1-4 are the only theoretical window, and distinct tapes
+# make a fluke champion in that window vanishingly unlikely.
+@pytest.mark.parametrize("data_seed,search_seed", [(42, 1), (7, 5), (123, 9)])
+def test_noise_yields_zero_champions(tmp_path, data_seed, search_seed):
+    bars = _random_walk(1800, seed=data_seed)
     store = Store(tmp_path)
-    result = run_search("NOISE", bars, generations=30, pop_size=24, seed=1, store=store)
-    assert result["champion"] is None, f"overfit leak: {result['champion']}"
+    result = run_search("NOISE", bars, generations=30, pop_size=24, seed=search_seed, store=store)
+    assert result["champion"] is None, (
+        f"overfit leak (data={data_seed}, search={search_seed}): {result['champion']}"
+    )
 
 
 def test_same_seed_is_deterministic(tmp_path):
