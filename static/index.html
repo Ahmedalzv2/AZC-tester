@@ -108,12 +108,59 @@
 
         <section class="card metrics-panel">
           <h2>Metrics</h2>
+          <div id="significance" class="verdict"></div>
           <div id="metrics" class="metrics-grid"></div>
           <div class="source-box">
             <div class="eyebrow">SOURCE</div>
             <pre id="source"></pre>
           </div>
         </section>
+      </section>
+
+      <section class="card sweep-panel">
+        <div class="row between">
+          <h2>Parameter sweep</h2>
+          <span id="sweep-status" class="status">Idle</span>
+        </div>
+        <p class="muted">Grid every combo, ranked best-first — each row carries its Newey-West t and bootstrap p so the top isn't just the luckiest overfit. Uses the strategy, provider, symbol and fee above.</p>
+        <div class="row gap wrap">
+          <label class="grow">
+            Sweep grid JSON (param &rarr; list of values)
+            <textarea id="sweep-grid" rows="5">{
+  "fast": [5, 10, 20],
+  "slow": [30, 50, 100]
+}</textarea>
+          </label>
+          <label>
+            Sort by
+            <select id="sweep-sort">
+              <option value="total_return_pct" selected>Total Return %</option>
+              <option value="sharpe">Sharpe</option>
+              <option value="annualized_return_pct">Annualized %</option>
+              <option value="win_rate_pct">Win Rate %</option>
+              <option value="max_drawdown_pct">Max Drawdown %</option>
+            </select>
+          </label>
+          <button id="sweep-button" type="button">Run sweep</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Params</th>
+                <th>Total %</th>
+                <th>Sharpe</th>
+                <th>Max DD %</th>
+                <th>Trades</th>
+                <th>Win %</th>
+                <th>t (HAC)</th>
+                <th>p-value</th>
+                <th>Verdict</th>
+              </tr>
+            </thead>
+            <tbody id="sweep-body"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="card chart-panel">

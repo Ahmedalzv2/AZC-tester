@@ -115,6 +115,35 @@ button.ghost {
 .metric.good .value { color: var(--good); }
 .metric.bad .value { color: var(--bad); }
 .chart { height: 420px; }
+.muted { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.row.wrap { flex-wrap: wrap; align-items: flex-end; }
+.grow { flex: 1 1 280px; }
+/* Significance verdict badge */
+.verdict { margin-bottom: 14px; }
+.verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #0b1430;
+}
+.verdict-row.good { border-color: var(--good); background: rgba(46, 204, 113, 0.10); }
+.verdict-row.bad { border-color: var(--bad); background: rgba(255, 107, 107, 0.10); }
+.verdict-tag { font-weight: 800; letter-spacing: 0.08em; font-size: 13px; }
+.verdict-row.good .verdict-tag { color: var(--good); }
+.verdict-row.bad .verdict-tag { color: var(--bad); }
+.verdict-stat { color: var(--text); font-size: 14px; }
+.verdict-note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+/* Sweep table */
+.sweep-panel td, .sweep-panel th { font-size: 13px; white-space: nowrap; }
+.sweep-panel tr.best { background: rgba(110, 168, 254, 0.12); }
+.sweep-panel td.good { color: var(--good); font-weight: 700; }
+.sweep-panel td.bad { color: var(--bad); }
+.sweep-panel tr.err td { color: var(--bad); }
+.sweep-panel button { width: auto; }
+.sweep-panel select { width: auto; }
 .source-box {
   margin-top: 16px;
   background: #091122;
