@@ -28,3 +28,11 @@ coverage.xml
 
 # Why: fetched market data cache is reproducible local state, not source.
 data_cache/
+
+# Why: transient cross-agent (Claude Code <-> Hermes) soft-lock file, not source.
+.agent-coordination.md
+
+# Why: research run history is local state and can grow large quickly.
+storage/
+evolab/state/
+evolab/runs.jsonl
