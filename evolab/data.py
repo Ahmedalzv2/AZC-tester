@@ -1,7 +1,8 @@
 """Asset → fixture resolution and IS/OOS splitting for EvoLab.
 
-Crypto-perp scope: the deep 5y hourly AZC fixtures, resampled to 4h. Lifts the
-loader from strategy_hunt so the search uses the exact same tape.
+Crypto-perp scope: the deep 5y hourly AZC fixtures, resampled to 4h. Mirrors
+the loader/tape config from strategy_hunt (which stays intact as the legacy
+grid) so EvoLab searches the exact same bars.
 """
 from __future__ import annotations
 
@@ -20,7 +21,9 @@ MARKETS: dict[str, tuple[str, int]] = {
 }
 
 # All-taker fees: the honest, fundable assumption (see playbook).
-TAKER = {"makerEntry": False, "makerTp": False, "takerRate": 0.00075, "slipBps": 0}
+TAKER: dict[str, bool | float | int] = {
+    "makerEntry": False, "makerTp": False, "takerRate": 0.00075, "slipBps": 0,
+}
 
 OOS_FRACTION = 0.30
 
