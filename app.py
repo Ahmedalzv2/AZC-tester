@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hmac
+import os
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -18,6 +20,21 @@ from walkforward import walk_forward
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+
+# Shared-secret gate for the compute/mutating endpoints. The endpoints that run
+# strategy code (/api/backtest, /api/sweep, /api/walkforward) and the destructive
+# delete are protected when AZC_API_KEY is set; reads and the static UI stay open.
+# If AZC_API_KEY is unset (e.g. local dev) auth is disabled — set it in any
+# internet-facing deploy, since custom_python executes arbitrary Python.
+API_KEY = os.environ.get("AZC_API_KEY", "").strip()
+
+
+def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
+    if not API_KEY:
+        return  # auth disabled when no key is configured
+    if not x_api_key or not hmac.compare_digest(x_api_key, API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key (send header X-API-Key)")
+
 
 app = FastAPI(title="Backtest Lab")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -73,7 +90,7 @@ def providers() -> dict[str, Any]:
     return available_providers()
 
 
-@app.post("/api/backtest")
+@app.post("/api/backtest", dependencies=[Depends(require_api_key)])
 def backtest(req: BacktestRequest) -> dict[str, Any]:
     try:
         df, source_info = fetch_history(
@@ -141,12 +158,12 @@ def run_detail(run_id: str) -> dict[str, Any]:
     return record
 
 
-@app.delete("/api/runs/{run_id}")
+@app.delete("/api/runs/{run_id}", dependencies=[Depends(require_api_key)])
 def run_delete(run_id: str) -> dict[str, Any]:
     return {"deleted": delete_run(run_id)}
 
 
-@app.post("/api/sweep")
+@app.post("/api/sweep", dependencies=[Depends(require_api_key)])
 def sweep_endpoint(req: SweepRequest) -> dict[str, Any]:
     try:
         df, source_info = fetch_history(
@@ -180,7 +197,7 @@ def sweep_endpoint(req: SweepRequest) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@app.post("/api/walkforward")
+@app.post("/api/walkforward", dependencies=[Depends(require_api_key)])
 def walkforward_endpoint(req: WalkForwardRequest) -> dict[str, Any]:
     try:
         df, source_info = fetch_history(

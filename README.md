@@ -91,3 +91,57 @@ Example local-file payload:
   "fee_bps": 5
 }
 ```
+
+## Authentication
+
+The compute/mutating endpoints execute strategy code, so they are gated by a
+shared secret when `AZC_API_KEY` is set in the server environment:
+
+- Protected (require header `X-API-Key: <key>`): `POST /api/backtest`,
+  `POST /api/sweep`, `POST /api/walkforward`, `DELETE /api/runs/{id}`.
+- Open: the static UI, `GET /api/health`, `GET /api/strategies`,
+  `GET /api/providers`, `GET /api/runs`, `GET /api/runs/{id}`.
+- If `AZC_API_KEY` is unset, auth is disabled (local dev). **Always set it on
+  any internet-facing deploy** — `custom_python` runs arbitrary Python.
+- The browser UI prompts for the key once and stores it in `localStorage`.
+
+Set it via docker-compose (host env or `.env`): `AZC_API_KEY=your-long-secret`.
+
+## Feeding strategies programmatically (AZC integration)
+
+The AZC platform feeds strategies by POSTing to `/api/backtest`. Each run is
+auto-saved and appears in Browse. The response carries the full report plus the
+honest edge signals to learn from: `significance` (`real`/`noise`,
+Newey-West t + bootstrap p). For an out-of-sample check, POST the same body to
+`/api/walkforward` and read `holds_out_of_sample` + `decay`.
+
+Built-in strategy (curl):
+```bash
+curl -s https://HOST/api/backtest \
+  -H "Content-Type: application/json" -H "X-API-Key: $AZC_API_KEY" \
+  -d '{"data_provider":"yahoo","symbol":"BTC-USD","interval":"1d","years":5,
+       "strategy":"sma_cross","strategy_params":{"fast":10,"slow":30},
+       "initial_cash":10000,"fee_bps":7}'
+```
+
+Custom strategy — send the logic as a `build_signals(df, params)` function in
+`custom_code` (return a position series in [-1, 1]; +1 long, -1 short, 0 flat):
+```json
+{
+  "data_provider": "yahoo",
+  "symbol": "BTC-USD",
+  "interval": "1d",
+  "years": 5,
+  "strategy": "custom_python",
+  "strategy_params": {"lookback": 20},
+  "custom_code": "def build_signals(df, params):\n    n = int(params.get('lookback', 20))\n    ma = df['Close'].rolling(n).mean()\n    return (df['Close'] > ma).astype(float)\n",
+  "initial_cash": 10000,
+  "fee_bps": 7
+}
+```
+
+Response keys an AZC learning loop cares about:
+- `metrics.total_return_pct`, `metrics.report.profit_factor`,
+  `metrics.report.sharpe`, `metrics.report.sortino`, `metrics.report.max_drawdown_pct`
+- `significance.significant` (bool), `significance.tstat`, `significance.pvalue`
+- `saved.id` — the run id, openable in Browse / `GET /api/runs/{id}`

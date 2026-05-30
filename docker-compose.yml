@@ -4,6 +4,10 @@ services:
     build: .
     restart: unless-stopped
     working_dir: /root/apps/backtest-lab
+    environment:
+      # Shared secret for the run/compute endpoints. Set AZC_API_KEY in the host
+      # env (or a .env file) for any internet-facing deploy. Empty = auth off.
+      - AZC_API_KEY=${AZC_API_KEY:-}
     volumes:
       - /root/apps/backtest-lab:/root/apps/backtest-lab
       - /root:/root

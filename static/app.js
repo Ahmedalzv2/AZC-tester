@@ -82,7 +82,21 @@ function fmtDate(iso) {
 }
 
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
+  const withKey = (opts) => {
+    const key = localStorage.getItem('azc_api_key');
+    const headers = { ...(opts.headers || {}) };
+    if (key) headers['X-API-Key'] = key;
+    return { ...opts, headers };
+  };
+  let response = await fetch(url, withKey(options));
+  if (response.status === 401) {
+    // A protected endpoint (e.g. run/delete) needs the API key — ask once, store, retry.
+    const entered = prompt('This tester requires an API key for runs. Enter it (stored in this browser only):');
+    if (entered) {
+      localStorage.setItem('azc_api_key', entered.trim());
+      response = await fetch(url, withKey(options));
+    }
+  }
   const body = await response.json();
   if (!response.ok) throw new Error(body.detail || 'Request failed');
   return body;
