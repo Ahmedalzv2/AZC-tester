@@ -24,6 +24,57 @@ from typing import Any
 from evolab import data
 from evolab.search import STATE_DIR, run_search
 from evolab.store import Store, write_json_atomic
+from evolab.genome import Genome
+from evolab.publish import publish_genome
+import json as _json
+
+PUBLISH_URL = os.environ.get("EVOLAB_PUBLISH_URL", "https://backtest-gallant.srv1688368.hstgr.cloud")
+
+
+def _publish_key() -> str | None:
+    key = os.environ.get("EVOLAB_PUBLISH_KEY", "").strip()
+    if key:
+        return key
+    env = Path("/root/apps/backtest-lab-gallant/.env")
+    if env.exists():
+        for line in env.read_text().splitlines():
+            if line.strip().startswith("AZC_API_KEY="):
+                return line.split("=", 1)[1].strip()
+    return None
+
+
+def _champ_signature(champion: dict) -> str:
+    params = champion.get("params", {})
+    items = ",".join(f"{k}={params[k]}" for k in sorted(params))
+    return f"{champion.get('family')}|{items}|{round(float(champion.get('is_score', 0.0)), 5)}"
+
+
+def maybe_publish_champion(result: dict, store: Store) -> None:
+    """Promote a freshly-validated champion to the gallant showcase, once per
+    promotion. Env-gated (EVOLAB_PUBLISH != '0'); never raises into the loop."""
+    if os.environ.get("EVOLAB_PUBLISH", "1") == "0":
+        return
+    if not result.get("new_champion"):
+        return
+    champion = result.get("champion")
+    if not champion:
+        return
+    sig_path = store.base / "published.json"
+    try:
+        published = {}
+        if sig_path.exists():
+            published = _json.loads(sig_path.read_text())
+        asset = result["asset"]
+        sig = _champ_signature(champion)
+        if published.get(asset) == sig:
+            return
+        genome = Genome(champion["family"], champion.get("params", {}))
+        publish_genome(asset, genome, base_url=PUBLISH_URL, api_key=_publish_key())
+        published[asset] = sig
+        write_json_atomic(sig_path, published)
+        print(f"[evolab] promoted champion {asset} -> gallant ({sig})", flush=True)
+    except Exception as err:
+        print(f"[evolab] champion publish FAILED for {result.get('asset')}: {err!r}", flush=True)
 
 GENS_PER_VISIT = int(os.environ.get("EVOLAB_GENS_PER_VISIT", "3"))
 SLEEP_SECONDS = int(os.environ.get("EVOLAB_SLEEP_SECONDS", "30"))
@@ -94,6 +145,7 @@ def one_cycle(
                   f"trials={result['trials_cumulative']} bestIS={result['best_is_score']} "
                   f"champion={'YES ' + champ['family'] if champ else 'none'}", flush=True)
             _write_heartbeat(state_dir, cycle, asset)
+            maybe_publish_champion(result, store)
         except Exception as err:  # one bad asset must not kill the loop
             print(f"[evolab] cycle={cycle} {asset} ERROR: {err!r} — skipped", flush=True)
     return advanced

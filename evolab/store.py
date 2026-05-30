@@ -65,6 +65,19 @@ class Store:
     def save_state(self, asset: str, state: dict[str, Any]) -> None:
         write_json_atomic(self._state_path(asset), state)
 
+    def seed_genome(self, asset: str, genome: Genome) -> None:
+        """Insert a genome at the front of an asset's population so the daemon
+        evolves it on the next visit. Exact-duplicate genomes are dropped; a
+        missing state file is created. Atomic write."""
+        state = self.load_state(asset)
+        gd = genome_to_dict(genome)
+        pop = state.get("population", [])
+        if gd not in pop:
+            pop.insert(0, gd)
+        state["asset"] = asset
+        state["population"] = pop
+        self.save_state(asset, state)
+
     # ── audit log ─────────────────────────────────────────────────────────
     def append_run(self, record: dict[str, Any]) -> None:
         with self._runs_path.open("a") as f:
