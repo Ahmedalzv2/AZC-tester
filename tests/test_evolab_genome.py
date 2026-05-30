@@ -6,7 +6,7 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from evolab.genome import PARAM_SCHEMAS, Genome, genome_key, random_genome
+from evolab.genome import PARAM_SCHEMAS, Genome, crossover, genome_key, mutate, random_genome
 
 
 def _in_schema(g: Genome) -> bool:
@@ -55,9 +55,6 @@ def test_random_genome_without_family_picks_a_known_family():
         assert g.family in PARAM_SCHEMAS
 
 
-from evolab.genome import crossover, mutate
-
-
 def test_mutate_stays_in_schema_bounds():
     rng = random.Random(3)
     for _ in range(200):
@@ -79,6 +76,9 @@ def test_crossover_same_family_is_legal_and_mixes():
     rng = random.Random(5)
     a = random_genome(rng, family="bollinger_fade")
     b = random_genome(rng, family="bollinger_fade")
+    # Guard against a vacuous pass: the mixing path is only exercised if the
+    # parents actually differ somewhere.
+    assert a.params != b.params
     child = crossover(a, b, rng)
     assert child.family == "bollinger_fade"
     assert _in_schema(child)
