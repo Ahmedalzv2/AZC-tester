@@ -188,6 +188,7 @@ def simulate_bracket(bars: list[Bar], p: dict[str, Any], from_idx: int | None = 
                         "dir": direction,
                         "entry": entry,
                         "exit": exit_px,
+                        "risk": risk,
                         "grossR": gross_r,
                         "netR": gross_r - fee_r,
                         "win": win,
@@ -254,9 +255,38 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
     peak = initial_cash
     max_dd = 0.0
     curve = []
+    cum_pnl = 0.0
+    dollar_trades: list[dict[str, Any]] = []
     for idx, bar in enumerate(bars):
         if idx in by_exit:
-            equity *= 1 + by_exit[idx]["netR"] * risk_pct
+            t = by_exit[idx]
+            equity_before = equity
+            net_pnl = equity_before * (t["netR"] * risk_pct)
+            gross_pnl = equity_before * (t["grossR"] * risk_pct)
+            commission = gross_pnl - net_pnl
+            risk = t.get("risk", 0.0)
+            notional = (equity_before * risk_pct) / risk * t["entry"] if risk else 0.0
+            qty = notional / t["entry"] if t["entry"] else 0.0
+            runup, drawdown_dollars = _trade_excursion(bars, t, qty)
+            cum_pnl += net_pnl
+            equity *= 1 + t["netR"] * risk_pct
+            dollar_trades.append({
+                "entry_at": _ms_iso(bars[t["entry_idx"]].t),
+                "exit_at": _ms_iso(bars[t["exit_idx"]].t),
+                "side": t["dir"],
+                "entry_price": round(t["entry"], 6),
+                "exit_price": round(t["exit"], 6),
+                "qty": round(qty, 6),
+                "bars": int(t["exit_idx"] - t["entry_idx"]),
+                "net_pnl": round(net_pnl, 2),
+                "gross_pnl": round(gross_pnl, 2),
+                "commission": round(commission, 2),
+                "pnl_pct": round((net_pnl / equity_before) * 100 if equity_before else 0.0, 3),
+                "cum_pnl": round(cum_pnl, 2),
+                "runup": round(runup, 2),
+                "drawdown": round(drawdown_dollars, 2),
+                "equity_after": round(equity, 2),
+            })
         if equity > peak:
             peak = equity
         dd = equity / peak - 1 if peak else 0.0
@@ -295,6 +325,15 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
     # HAC t-stat). This is the honest test the AZC lane is judged on.
     significance = _bracket_significance([t["netR"] for t in trades])
 
+    from report import build_report
+
+    report = build_report(
+        curve=curve,
+        trades=dollar_trades,
+        initial_cash=float(initial_cash),
+        bars_per_year=int(max(len(bars) / years, 1)) if years > 0 else len(bars),
+    )
+
     metrics = {
         "ending_equity": round(equity, 2),
         "total_return_pct": round(total_return * 100, 3),
@@ -315,20 +354,30 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
         "interval": interval,
         "execution": "bracket",
         "significance": significance,
+        "report": report,
     }
 
-    trade_rows = [
-        {
-            "entry_at": _ms_iso(bars[t["entry_idx"]].t),
-            "exit_at": _ms_iso(bars[t["exit_idx"]].t),
-            "entry_price": round(t["entry"], 6),
-            "exit_price": round(t["exit"], 6),
-            "pnl_pct": round(t["netR"], 3),  # R, not %, for bracket trades
-            "equity_after": None,
-        }
-        for t in trades[-200:]
-    ]
-    return metrics, curve, trade_rows
+    return metrics, curve, dollar_trades[-500:]
+
+
+def _trade_excursion(bars: list[Bar], t: dict[str, Any], qty: float) -> tuple[float, float]:
+    """Max favorable / adverse dollar excursion over the trade's holding bars.
+
+    Run-up is the best unrealized gain reached; drawdown is the worst unrealized
+    loss (<= 0). Measured off the OHLC path the position lived through."""
+    entry = t["entry"]
+    hold = bars[t["entry_idx"] : t["exit_idx"] + 1]
+    if not hold or qty <= 0:
+        return 0.0, 0.0
+    if t["dir"] == "long":
+        best = max(x.h for x in hold) - entry
+        worst = min(x.l for x in hold) - entry
+    else:
+        best = entry - min(x.l for x in hold)
+        worst = entry - max(x.h for x in hold)
+    runup = max(best, 0.0) * qty
+    drawdown = min(worst, 0.0) * qty
+    return runup, drawdown
 
 
 def _ms_iso(ms: int) -> str:

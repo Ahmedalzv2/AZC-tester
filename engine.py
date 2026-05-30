@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from report import build_report
 from strategies import STRATEGIES
 from strategies.custom_python import build as build_custom_python
 
@@ -95,35 +96,82 @@ def run_backtest(
     equity = initial_cash * (1 + strategy_returns).cumprod()
     drawdown = equity / equity.cummax() - 1
 
-    trades = []
+    # Dollar commission per bar: the fee fraction applied to prior equity. Summed
+    # over a trade's bars this is the trade's commission; summed over all bars it
+    # is the total — so gross_profit + gross_loss - commission == net_pnl exactly.
+    prev_equity = equity.shift(1).fillna(float(initial_cash))
+    dollar_fees = (fees * prev_equity).to_numpy()
+
+    equity_arr = equity.to_numpy()
+    pos_arr = position.to_numpy()
+    shifted_arr = shifted_position.to_numpy()
+    close_arr = close.to_numpy()
+    index = clean.index
+
+    trades: list[dict[str, Any]] = []
+    cum_pnl = 0.0
     open_trade: dict[str, Any] | None = None
 
-    for idx in clean.index:
-        prev_pos = float(shifted_position.loc[idx])
-        current_pos = float(position.loc[idx])
-        current_price = float(close.loc[idx])
+    def _close_trade(ot: dict[str, Any], exit_i: int) -> None:
+        nonlocal cum_pnl
+        entry_i = ot["entry_i"]
+        # Base the trade on the equity just BEFORE the entry bar so the entry
+        # commission (deducted on the entry bar) lands inside this trade's net
+        # and commission, keeping gross = net + commission consistent.
+        base_i = entry_i - 1
+        equity_base = float(equity_arr[base_i]) if base_i >= 0 else float(initial_cash)
+        equity_exit = float(equity_arr[exit_i])
+        net_pnl = equity_exit - equity_base
+        commission = float(dollar_fees[entry_i : exit_i + 1].sum())
+        gross_pnl = net_pnl + commission
+        notional = abs(ot["pos"]) * equity_base
+        qty = notional / ot["entry_price"] if ot["entry_price"] else 0.0
+        lo = base_i if base_i >= 0 else entry_i
+        path = equity_arr[lo : exit_i + 1]
+        runup = float(path.max() - equity_base) if path.size else 0.0
+        drawdown_dollars = float(path.min() - equity_base) if path.size else 0.0
+        cum_pnl += net_pnl
+        pnl_pct = (net_pnl / notional) * 100 if notional else 0.0
+        trades.append(
+            {
+                "entry_at": ot["entry_at"].isoformat(),
+                "exit_at": index[exit_i].isoformat(),
+                "side": ot["side"],
+                "entry_price": round(ot["entry_price"], 4),
+                "exit_price": round(float(close_arr[exit_i]), 4),
+                "qty": round(qty, 6),
+                "bars": int(exit_i - entry_i),
+                "net_pnl": round(net_pnl, 2),
+                "gross_pnl": round(gross_pnl, 2),
+                "commission": round(commission, 2),
+                "pnl_pct": round(pnl_pct, 3),
+                "cum_pnl": round(cum_pnl, 2),
+                "runup": round(runup, 2),
+                "drawdown": round(drawdown_dollars, 2),
+                "equity_after": round(equity_exit, 2),
+            }
+        )
+
+    for i in range(len(index)):
+        prev_pos = float(shifted_arr[i])
+        current_pos = float(pos_arr[i])
 
         if open_trade is not None and (current_pos == 0 or np.sign(current_pos) != np.sign(prev_pos)):
-            pnl_pct = _trade_pnl_pct(open_trade["side"], float(open_trade["entry_price"]), current_price)
-            trades.append(
-                {
-                    "entry_at": open_trade["entry_at"].isoformat(),
-                    "exit_at": idx.isoformat(),
-                    "side": open_trade["side"],
-                    "entry_price": round(float(open_trade["entry_price"]), 4),
-                    "exit_price": round(current_price, 4),
-                    "pnl_pct": round(pnl_pct, 3),
-                    "equity_after": round(float(equity.loc[idx]), 2),
-                }
-            )
+            _close_trade(open_trade, i)
             open_trade = None
 
         if current_pos != 0 and (prev_pos == 0 or np.sign(current_pos) != np.sign(prev_pos)):
             open_trade = {
-                "entry_at": idx,
-                "entry_price": current_price,
+                "entry_i": i,
+                "entry_at": index[i],
+                "entry_price": float(close_arr[i]),
                 "side": _trade_side(current_pos),
+                "pos": current_pos,
             }
+
+    # A position still open on the last bar is marked to the final close.
+    if open_trade is not None:
+        _close_trade(open_trade, len(index) - 1)
 
     total_return = (equity.iloc[-1] / initial_cash) - 1
     bars_per_year = BARS_PER_YEAR.get(interval, max(1, int(len(clean) / max(clean.index[-1].year - clean.index[0].year + 1, 1))))
@@ -132,19 +180,27 @@ def run_backtest(
     sharpe = 0.0 if sharpe_denominator == 0 else (strategy_returns.mean() / sharpe_denominator) * np.sqrt(bars_per_year)
     win_rate = 0.0
     if trades:
-        win_rate = sum(1 for trade in trades if trade["pnl_pct"] > 0) / len(trades)
+        win_rate = sum(1 for trade in trades if trade["net_pnl"] > 0) / len(trades)
 
     curve = []
-    for idx, row in clean.iterrows():
+    for i, idx in enumerate(index):
         curve.append(
             {
                 "time": idx.isoformat(),
-                "close": round(float(row["Close"]), 4),
-                "equity": round(float(equity.loc[idx]), 2),
-                "position": round(float(position.loc[idx]), 4),
-                "drawdown": round(float(drawdown.loc[idx]) * 100, 3),
+                "close": round(float(close_arr[i]), 4),
+                "equity": round(float(equity_arr[i]), 2),
+                "position": round(float(pos_arr[i]), 4),
+                "drawdown": round(float(drawdown.iloc[i]) * 100, 3),
             }
         )
+
+    report = build_report(
+        curve=curve,
+        trades=trades,
+        initial_cash=float(initial_cash),
+        bars_per_year=bars_per_year,
+        commission_total=float(dollar_fees.sum()),
+    )
 
     metrics = {
         "bars": int(len(clean)),
@@ -163,5 +219,6 @@ def run_backtest(
         "strategy": strategy_name,
         "strategy_params": params,
         "interval": interval,
+        "report": report,
     }
-    return BacktestResult(metrics=metrics, curve=curve, trades=trades[-200:])
+    return BacktestResult(metrics=metrics, curve=curve, trades=trades[-500:])

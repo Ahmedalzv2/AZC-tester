@@ -1,6 +1,7 @@
 # Backtest Lab
 
-Fast local dashboard for generic strategy research.
+Fast local dashboard for generic strategy research, with a full TradingView-style
+**strategy report**.
 
 What it does:
 - runs a market-agnostic backtest engine against normalized OHLCV data
@@ -8,7 +9,19 @@ What it does:
 - caches Yahoo datasets locally under `data_cache/`
 - loads local CSV or Parquet files directly by path
 - supports built-in strategies and custom Python strategy logic
-- serves a browser dashboard for charts, metrics, and future extensions
+- serves a browser dashboard: summary cards, equity + drawdown curve, returns
+  split (ALL / LONG / SHORT), profit structure, risk-adjusted ratios
+  (Sharpe / Sortino / max run-up), win-loss donut, P&L distribution, a full
+  performance-details table, and a detailed trade list
+
+Strategy report (`metrics.report`):
+- Every `/api/backtest` response carries a `report` block, built by `report.py`
+  from the equity curve + the per-trade dollar ledger. Both execution engines
+  (close-to-close `engine.py` and the AZC bracket `engine_bracket.py`) feed the
+  same shape, so the report renders identically regardless of lane.
+- Profit structure is exact: `gross_profit + gross_loss - commission == net_pnl`.
+- Trades carry dollar truth: side, entry/exit price+time, qty, bars, net/gross
+  P&L, commission, cumulative P&L, and per-trade run-up / drawdown.
 
 Current data providers:
 - `yahoo` — first remote adapter, still honest about intraday retention limits
