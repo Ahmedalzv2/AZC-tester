@@ -25,3 +25,6 @@ coverage.xml
 
 # Why: runtime logs are disposable local artifacts.
 *.log
+
+# Why: fetched market data cache is reproducible local state, not source.
+data_cache/
