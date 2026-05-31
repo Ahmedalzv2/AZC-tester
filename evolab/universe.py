@@ -133,7 +133,12 @@ class ProvenUniverse(Universe):
         sc = self.score(genome, is_bars, oos_bars)
         fee_bps = round(PROVEN_FEE["takerRate"] * 1e4, 2)
 
+        # Dollar ledger + full report (same builder as the crypto lane) so the
+        # gallant Strategy Report renders every section for proven candidates too.
+        curve, dollar_trades, report = publish.report_block(trades, risk_pct)
+
         metrics = {
+            "report": report,
             "trade_count": bm["n"], "win_rate_pct": round(bm["winPct"], 3),
             "total_r": round(bm["totalR"], 4), "net_r_per_trade": round(bm["netR"], 4),
             "max_drawdown_r": round(bm["maxDD"], 4),
@@ -154,8 +159,8 @@ class ProvenUniverse(Universe):
             "strategy_params": dict(genome.params),
         }
         response = {
-            "metrics": metrics, "significance": significance, "trades": trades,
-            "curve": publish.build_equity_curve([t["netR"] for t in trades], risk_pct),
+            "metrics": metrics, "significance": significance, "trades": dollar_trades,
+            "curve": curve,
             "source": {"provider": "evolab-proven",
                        "note": "EvoLab proven-universe genome, daily, 2bp taker"},
             "evolab": {"family": genome.family, "params": dict(genome.params),

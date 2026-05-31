@@ -211,7 +211,15 @@ def simulate_signal(bars: list[Bar], entry_fn: EntryFn, p: dict[str, Any]) -> li
                 entry_fee = 0.0 if maker_entry else taker_rate
                 exit_fee = taker_rate if taker_exit else (0.0 if maker_tp else taker_rate)
                 fee_r = (entry * (entry_fee + exit_fee)) / risk
-                trades.append({"ts": bars[i].t, "dir": direction, "netR": gross_r - fee_r, "win": win})
+                # ts/dir/netR/win are the scored truth; grossR/entry/exit/bars/
+                # exit_ts are carried so a downstream report can render dollars and
+                # an honest gross-vs-net commission split (additive keys only —
+                # bracket_metrics/fitness read just netR/win, so parity holds).
+                trades.append({
+                    "ts": bars[i].t, "dir": direction, "netR": gross_r - fee_r, "win": win,
+                    "grossR": gross_r, "entry": round(entry_fill, 6), "exit": round(exit_fill, 6),
+                    "bars": exit_idx - (i + 1), "exit_ts": bars[exit_idx].t,
+                })
                 i = exit_idx
         i += 1
     return trades

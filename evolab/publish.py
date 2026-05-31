@@ -23,6 +23,7 @@ import numpy as np
 
 from bracket_signals import SIGNALS, simulate_signal
 from engine_bracket import bracket_metrics
+from report import build_report
 from evolab import data, fitness
 from evolab.genome import FIXED_PARAMS, PARAM_SCHEMAS, Genome
 
@@ -45,6 +46,83 @@ def build_equity_curve(net_rs: list[float], risk_pct: float) -> list[dict[str, A
     return curve
 
 
+def _iso(ms: int | None) -> str | None:
+    """Epoch-ms -> ISO string for the trade blotter. Fixtures reach back to the
+    1920s (negative epochs), so go through a UTC datetime, not time.gmtime."""
+    if ms is None:
+        return None
+    try:
+        from datetime import datetime, timezone, timedelta
+        return (datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=int(ms))).isoformat()
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
+def build_dollar_trades(trades: list[dict[str, Any]], risk_pct: float,
+                        initial: float = 100.0) -> list[dict[str, Any]]:
+    """R-native trades -> dollar-denominated ledger the gallant report renders.
+
+    Mirrors build_equity_curve's ADDITIVE (constant fraction-of-initial) risk
+    model exactly, so the ledger's cumulative P&L tracks the equity chart point
+    for point. grossR (when carried) recovers an honest gross-vs-net commission
+    split; without it gross==net and commission is a truthful $0."""
+    step = risk_pct * initial  # dollar value of one R, constant per the additive curve
+    eq, cum = initial, 0.0
+    out: list[dict[str, Any]] = []
+    for t in trades:
+        net_r = float(t["netR"])
+        gross_r = float(t.get("grossR", net_r))
+        eq_before = eq
+        net_pnl = net_r * step
+        gross_pnl = gross_r * step
+        eq += net_pnl
+        cum += net_pnl
+        out.append({
+            "side": t.get("dir"),
+            "entry_at": _iso(t.get("ts")),
+            "exit_at": _iso(t.get("exit_ts")),
+            "entry_price": t.get("entry"),
+            "exit_price": t.get("exit"),
+            "bars": int(t.get("bars") or 0),
+            "net_pnl": round(net_pnl, 4),
+            "gross_pnl": round(gross_pnl, 4),
+            "commission": round(gross_pnl - net_pnl, 4),
+            "pnl_pct": round(net_pnl / eq_before * 100, 4) if eq_before else 0.0,
+            "cum_pnl": round(cum, 4),
+            "equity_after": round(eq, 4),
+        })
+    return out
+
+
+def report_block(trades: list[dict[str, Any]], risk_pct: float):
+    """Curve + dollar ledger + full TradingView-style report for an ingested run.
+    Shared by both universes so the gallant Strategy Report renders identically no
+    matter which lane published the candidate. Returns (curve, dollar_trades, report)."""
+    curve = build_equity_curve([t["netR"] for t in trades], risk_pct)
+    dollar_trades = build_dollar_trades(trades, risk_pct)
+    report = build_report(
+        curve=curve,
+        trades=dollar_trades,
+        initial_cash=100.0,
+        bars_per_year=_trades_per_year(trades),
+    )
+    return curve, dollar_trades, report
+
+
+def _trades_per_year(trades: list[dict[str, Any]]) -> int:
+    """Annualization factor for the per-trade equity curve (one point per trade),
+    derived from the wall-clock span the trades cover."""
+    n = len(trades)
+    if n < 2:
+        return max(n, 1)
+    t0 = trades[0].get("ts")
+    t1 = trades[-1].get("exit_ts") or trades[-1].get("ts")
+    if t0 is None or t1 is None or t1 <= t0:
+        return max(n, 1)
+    years = (t1 - t0) / (365.25 * 24 * 3600 * 1000)
+    return int(max(n / years, 1)) if years > 0 else max(n, 1)
+
+
 def _assemble_payload(asset: str, genome: Genome, trades: list[dict[str, Any]],
                       verdict: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     """Pure: map a genome + its trades + an honest `fitness.assess` verdict into
@@ -55,7 +133,13 @@ def _assemble_payload(asset: str, genome: Genome, trades: list[dict[str, Any]],
     sharpe = float(net_rs.mean() / (net_rs.std() + 1e-9)) if net_rs.size else 0.0
     oos = verdict.get("oos", {})
 
+    # Dollar ledger + full report so the gallant Strategy Report renders every
+    # section. Without metrics.report the renderer skips its `if (metrics.report)`
+    # block entirely and the candidate opens to an empty page.
+    curve, dollar_trades, report = report_block(trades, risk_pct)
+
     metrics = {
+        "report": report,
         "trade_count": bm["n"],
         "win_rate_pct": round(bm["winPct"], 3),
         "total_r": round(bm["totalR"], 4),
@@ -91,8 +175,8 @@ def _assemble_payload(asset: str, genome: Genome, trades: list[dict[str, Any]],
     response_payload = {
         "metrics": metrics,
         "significance": significance,
-        "trades": trades,
-        "curve": build_equity_curve([t["netR"] for t in trades], risk_pct),
+        "trades": dollar_trades,
+        "curve": curve,
         "source": {"provider": "evolab", "note": "EvoLab genome via simulate_signal (all-taker)"},
         "evolab": {
             "family": genome.family,
