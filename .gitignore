@@ -36,3 +36,8 @@ data_cache/
 storage/
 evolab/state/
 evolab/runs.jsonl
+
+# Why: proven-universe fixtures are fetched market data, regenerable via scripts/fetch_proven_fixtures.py.
+evolab/fixtures/
+# Why: proven-universe search state, same as evolab/state/.
+evolab/state-proven/
