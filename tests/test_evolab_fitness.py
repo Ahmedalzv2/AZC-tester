@@ -34,7 +34,7 @@ def test_strong_signal_passes_champion_gate_directly():
     # variance (a constant array has zero variance and an undefined t-stat).
     strong = np.array([0.3] * 100 + [-0.1] * 20)
     assert fitness._passes_gate(
-        is_score=float(strong.mean()), oos_n=strong.size, oos_mean=float(strong.mean()),
+        is_mean=float(strong.mean()), oos_n=strong.size, oos_mean=float(strong.mean()),
         oos_t=fitness._tstat(strong), oos_p=fitness._pvalue(strong),
         alpha_deflated=0.05,
     ) is True
@@ -79,7 +79,57 @@ def test_strong_signal_still_passes_under_heavy_deflation():
     # let a genuinely exceptional edge through no matter how deflated the alpha.
     strong = np.array([0.3] * 100 + [-0.1] * 20)
     assert fitness._passes_gate(
-        is_score=float(strong.mean()), oos_n=strong.size, oos_mean=float(strong.mean()),
+        is_mean=float(strong.mean()), oos_n=strong.size, oos_mean=float(strong.mean()),
         oos_t=fitness._tstat(strong), oos_p=fitness._pvalue(strong),
         alpha_deflated=0.05 / 5000,  # ~5000 lifetime trials
     ) is True
+
+
+# --- selection fitness = cross-fold robustness (optimize for OOS persistence) ---
+
+
+def test_stability_score_penalizes_dispersion():
+    # Same in-sample mean, different temporal consistency across folds. The steady
+    # edge (real-looking) must outscore the spiky one (one lucky streak), because
+    # the spiky edge is the kind that dies out of sample.
+    steady = np.full(40, 0.1)
+    spiky = np.concatenate([np.full(20, 0.4), np.full(20, -0.2)])
+    assert abs(float(steady.mean()) - float(spiky.mean())) < 1e-9  # equal means
+    assert fitness._stability_score(steady) > fitness._stability_score(spiky)
+
+
+def test_stability_score_never_exceeds_mean():
+    # The penalty (lambda * dispersion, dispersion >= 0) can only lower the score.
+    spiky = np.concatenate([np.full(20, 0.4), np.full(20, -0.2)])
+    assert fitness._stability_score(spiky) <= float(spiky.mean()) + 1e-12
+
+
+def test_stability_score_falls_back_to_mean_when_thin():
+    # Fewer than 2 folds with enough trades -> no coverage to judge stability, so
+    # fall back to the plain mean (no penalty).
+    thin = np.array([0.1, 0.2, 0.3])
+    assert fitness._stability_score(thin) == float(thin.mean())
+
+
+def test_stability_score_empty_is_neg_inf():
+    assert fitness._stability_score(np.array([])) == float("-inf")
+
+
+def test_evaluate_exposes_is_mean_and_dispersion():
+    bars = _trending_bars(1600, 0.001)
+    g = Genome("donchian_break", {"don": 20, "atrN": 14, "atrMult": 2.0,
+                                  "trail": 3, "erMin": 0.0, "regimeN": 20})
+    r = fitness.evaluate(g, (bars[:1100], bars[1100:]), alpha_deflated=0.05)
+    assert hasattr(r, "is_mean")
+    assert hasattr(r, "is_dispersion")
+    if r.is_n > 0:
+        # selection score never exceeds the raw IS mean (stability penalty >= 0)
+        assert r.is_score <= r.is_mean + 1e-9
+        assert r.is_dispersion >= 0.0
+
+
+def test_gate_keys_off_raw_is_positivity():
+    # The champion gate's first arg is the raw IS mean: a positive IS mean with a
+    # passing OOS t passes; a non-positive IS mean fails regardless of OOS.
+    assert fitness._passes_gate(0.01, 100, 0.2, 2.5, 0.001, 0.05) is True
+    assert fitness._passes_gate(-0.01, 100, 0.2, 2.5, 0.001, 0.05) is False

@@ -60,13 +60,16 @@ def run_search(
                 dead += 1
                 continue
             best_is_score = max(best_is_score, r.is_score)
+            # Gate on raw IS positivity + OOS hold; rank champions by the robust
+            # selection score so the most temporally consistent gate-passer wins.
             candidate = fitness._passes_gate(
-                r.is_score, r.oos_n, r.oos_mean, r.oos_t, r.oos_p, alpha_after
+                r.is_mean, r.oos_n, r.oos_mean, r.oos_t, r.oos_p, alpha_after
             )
             if candidate and (champion is None or r.is_score > champion["is_score"]):
                 champion = {
                     **genome_to_dict(r.genome),
-                    "is_score": r.is_score, "oos_t": r.oos_t,
+                    "is_score": r.is_score, "is_mean": r.is_mean,
+                    "is_dispersion": r.is_dispersion, "oos_t": r.oos_t,
                     "oos_p": r.oos_p, "oos_n": r.oos_n,
                     "trials_at_promotion": store.cumulative_trials(), "ts": ts,
                 }

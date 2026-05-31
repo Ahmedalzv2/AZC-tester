@@ -1,8 +1,19 @@
 """Fitness: evolve on in-sample, validate champions out-of-sample.
 
-Selection score is the IS mean net-R only — the OOS slice is never optimized
-against, it just decides whether a genome qualifies as a champion under a
-Bonferroni bar that the caller deflates by the cumulative lifetime trial count.
+Selection score is a *cross-fold robustness* statistic on the in-sample slice:
+the IS mean net-R penalized for temporal inconsistency across N_FOLDS
+chronological trade-blocks. This is the honest reading of "optimize for OOS
+persistence": it rewards edges that hold across IS sub-windows (predictive of
+out-of-sample survival) over edges concentrated in one lucky streak (which die
+OOS) — without ever optimizing against the OOS slice itself. The OOS slice stays
+a clean holdout; it only decides whether a genome qualifies as a champion, under
+a Bonferroni bar the caller deflates by the cumulative lifetime trial count.
+
+Why not literally maximize the OOS HAC t (the playbook's shorthand)? Selecting on
+the holdout *is* optimizing against it — it converts the only independent
+validator into another training slice and re-introduces the overfit it was meant
+to catch. Cross-fold robustness gets the same intent (persistence, not in-sample
+fit) while keeping the holdout independent.
 """
 from __future__ import annotations
 
@@ -20,6 +31,14 @@ TREND_FAMILIES = {"donchian_break", "ts_momentum", "ma_cross", "bollinger_break"
 MIN_OOS_TRADES = 40
 P_SEED = 0  # fixed -> deterministic bootstrap p-values
 
+# Cross-fold robustness: split the IS trades into N_FOLDS chronological blocks
+# and penalize dispersion of per-fold mean netR. STABILITY_LAMBDA scales the
+# penalty (units of netR per unit of cross-fold std). A fold needs at least
+# MIN_FOLD_TRADES trades to count toward the stability estimate.
+N_FOLDS = 4
+MIN_FOLD_TRADES = 5
+STABILITY_LAMBDA = 0.5
+
 
 @dataclass
 class FitnessResult:
@@ -32,6 +51,44 @@ class FitnessResult:
     oos_t: float
     oos_p: float
     is_champion_candidate: bool
+    # Raw IS mean netR (the gate's economic-positivity check) and the cross-fold
+    # dispersion that the selection score (is_score) was penalized by. Appended
+    # with defaults so the positional dead-genome constructor stays valid.
+    is_mean: float = 0.0
+    is_dispersion: float = 0.0
+
+
+def _fold_means(net_rs: np.ndarray, n_folds: int = N_FOLDS) -> list[float]:
+    """Mean netR within each chronological trade-block that has enough trades.
+
+    Trades come out of simulate_signal in time order, so contiguous chunks are
+    contiguous in time. Blocks thinner than MIN_FOLD_TRADES are dropped (their
+    mean is too noisy to inform stability)."""
+    if net_rs.size == 0:
+        return []
+    return [float(b.mean()) for b in np.array_split(net_rs, n_folds) if b.size >= MIN_FOLD_TRADES]
+
+
+def _stability_score(net_rs: np.ndarray) -> float:
+    """Selection fitness: IS mean netR minus a penalty for cross-fold dispersion.
+
+    A persistent edge has similar per-fold means (low dispersion -> small
+    penalty); an edge that came from one lucky window has high dispersion and is
+    docked. Falls back to the plain mean when fewer than 2 folds clear
+    MIN_FOLD_TRADES (too little coverage to judge stability). Empty -> -inf."""
+    if net_rs.size == 0:
+        return float("-inf")
+    mean = float(net_rs.mean())
+    fmeans = _fold_means(net_rs)
+    if len(fmeans) < 2:
+        return mean
+    return mean - STABILITY_LAMBDA * float(np.std(fmeans))
+
+
+def _stability_dispersion(net_rs: np.ndarray) -> float:
+    """Cross-fold std of per-fold mean netR (0.0 when stability isn't assessable)."""
+    fmeans = _fold_means(net_rs)
+    return float(np.std(fmeans)) if len(fmeans) >= 2 else 0.0
 
 
 def _tstat(arr: np.ndarray) -> float:
@@ -80,12 +137,16 @@ def _critical_t(alpha_deflated: float) -> float:
     return max(2.0, -_probit(a))
 
 
-def _passes_gate(is_score, oos_n, oos_mean, oos_t, oos_p, alpha_deflated) -> bool:
-    # oos_p is retained for reporting; it is NOT the binding constraint — a 2000-
-    # iteration bootstrap floors at ~5e-4, which made `oos_p < alpha_deflated`
-    # unsatisfiable once cumulative trials pushed alpha below that floor.
+def _passes_gate(is_mean, oos_n, oos_mean, oos_t, oos_p, alpha_deflated) -> bool:
+    # First arg is the RAW IS mean netR (economic positivity), not the
+    # stability-penalized selection score — the gate must not reject a genome for
+    # in-sample dispersion, only require a real positive IS edge plus an
+    # independent OOS hold. oos_p is retained for reporting; it is NOT the binding
+    # constraint — a 2000-iteration bootstrap floors at ~5e-4, which made
+    # `oos_p < alpha_deflated` unsatisfiable once cumulative trials pushed alpha
+    # below that floor.
     return bool(
-        oos_n >= MIN_OOS_TRADES and oos_mean > 0 and is_score > 0
+        oos_n >= MIN_OOS_TRADES and oos_mean > 0 and is_mean > 0
         and oos_t >= _critical_t(alpha_deflated)
     )
 
@@ -105,14 +166,17 @@ def evaluate(genome: Genome, splits: tuple[list[Bar], list[Bar]], alpha_deflated
         # A broken genome scores as dead, never aborts the generation.
         return FitnessResult(genome, 0, float("-inf"), 0.0, 0, 0.0, 0.0, 1.0, False)
 
-    is_score = float(is_rs.mean()) if is_rs.size else float("-inf")
+    is_mean = float(is_rs.mean()) if is_rs.size else float("-inf")
+    is_score = _stability_score(is_rs)  # selection drives off robustness, not raw fit
+    is_dispersion = _stability_dispersion(is_rs)
     oos_mean = float(oos_rs.mean()) if oos_rs.size else 0.0
     oos_t, oos_p = _tstat(oos_rs), _pvalue(oos_rs)
-    candidate = _passes_gate(is_score, oos_rs.size, oos_mean, oos_t, oos_p, alpha_deflated)
+    # Gate on the raw IS mean (economic positivity), not the penalized score.
+    candidate = _passes_gate(is_mean, oos_rs.size, oos_mean, oos_t, oos_p, alpha_deflated)
     return FitnessResult(
         genome=genome, is_n=int(is_rs.size), is_score=is_score, is_t=_tstat(is_rs),
         oos_n=int(oos_rs.size), oos_mean=oos_mean, oos_t=oos_t, oos_p=oos_p,
-        is_champion_candidate=candidate,
+        is_champion_candidate=candidate, is_mean=is_mean, is_dispersion=is_dispersion,
     )
 
 
