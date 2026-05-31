@@ -143,7 +143,9 @@ def post_ingest(request_payload: dict[str, Any], response_payload: dict[str, Any
     req = urllib.request.Request(base_url.rstrip("/") + "/api/runs/ingest", data=body,
                                  method="POST", headers=headers)
     with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode()).get("run_id", "")
+        data = json.loads(resp.read().decode())
+    # the local lab returns {"run_id": ...}; the gallant deploy {"saved": {"id": ...}}
+    return data.get("run_id") or data.get("saved", {}).get("id", "")
 
 
 def publish_genome(asset: str, genome: Genome, base_url: str = DEFAULT_URL,
