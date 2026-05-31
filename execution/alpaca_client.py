@@ -11,8 +11,8 @@ import os
 import pathlib
 
 from alpaca.trading.client import TradingClient
-from alpaca.trading.enums import OrderSide, TimeInForce
-from alpaca.trading.requests import MarketOrderRequest
+from alpaca.trading.enums import OrderSide, QueryOrderStatus, TimeInForce
+from alpaca.trading.requests import GetOrdersRequest, LimitOrderRequest, MarketOrderRequest
 
 ENV_PATH = pathlib.Path(__file__).resolve().parent.parent / ".env"
 
@@ -71,3 +71,31 @@ class AlpacaPaper:
                                  side=side, time_in_force=TimeInForce.DAY)
         res = self.client.submit_order(order_data=req)
         return f"{action} {sym} ${order['notional']:,.2f} -> {res.id}"
+
+    # --- crypto grid support (24/7, GTC limit orders) ---------------------
+    def crypto_position(self, symbol: str) -> float:
+        """Quantity held of a crypto symbol (e.g. 'BTC/USD'); 0.0 if flat."""
+        try:
+            return float(self.client.get_open_position(symbol).qty)
+        except Exception:
+            return 0.0
+
+    def open_limit_orders(self, symbol: str) -> list[dict]:
+        """Resting limit orders for a symbol as {price, side} for reconciliation."""
+        reqf = GetOrdersRequest(status=QueryOrderStatus.OPEN, symbols=[symbol])
+        out = []
+        for o in self.client.get_orders(filter=reqf):
+            if o.limit_price is not None:
+                out.append({"price": float(o.limit_price), "side": o.side.value})
+        return out
+
+    def submit_limit(self, symbol: str, qty: float, side: str, limit_price: float) -> str:
+        """Place a GTC limit order (crypto). Dry-run logs the intent."""
+        if self.dry_run:
+            return f"DRY {side} {qty} {symbol} @ {limit_price}"
+        req = LimitOrderRequest(
+            symbol=symbol, qty=qty,
+            side=OrderSide.BUY if side == "buy" else OrderSide.SELL,
+            time_in_force=TimeInForce.GTC, limit_price=limit_price)
+        res = self.client.submit_order(order_data=req)
+        return f"{side} {qty} {symbol} @ {limit_price} -> {res.id}"
