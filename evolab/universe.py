@@ -155,6 +155,7 @@ class ProvenUniverse(Universe):
         }
         response = {
             "metrics": metrics, "significance": significance, "trades": trades,
+            "curve": publish.build_equity_curve([t["netR"] for t in trades], risk_pct),
             "source": {"provider": "evolab-proven",
                        "note": "EvoLab proven-universe genome, daily, 2bp taker"},
             "evolab": {"family": genome.family, "params": dict(genome.params),

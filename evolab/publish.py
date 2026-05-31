@@ -31,6 +31,20 @@ DEFAULT_RISK_PCT = 0.005        # account risk per trade
 FEE_BPS = round(float(data.TAKER["takerRate"]) * 1e4, 2)  # 7.5 bps all-taker
 
 
+def build_equity_curve(net_rs: list[float], risk_pct: float) -> list[dict[str, Any]]:
+    """Equity + drawdown series for the gallant report charts. The Browse detail
+    view calls renderCharts(response.curve) and does curve.map(...), so an ingested
+    run with no curve throws and the whole report blanks. equity is an index from
+    100 stepped by netR*risk; drawdown is running peak-to-trough %."""
+    curve, eq, peak = [], 100.0, 100.0
+    for i, r in enumerate(net_rs, start=1):
+        eq += float(r) * risk_pct * 100.0
+        peak = max(peak, eq)
+        dd = (eq / peak - 1.0) * 100.0 if peak else 0.0
+        curve.append({"time": i, "equity": round(eq, 3), "drawdown": round(dd, 3)})
+    return curve
+
+
 def _assemble_payload(asset: str, genome: Genome, trades: list[dict[str, Any]],
                       verdict: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     """Pure: map a genome + its trades + an honest `fitness.assess` verdict into
@@ -78,6 +92,7 @@ def _assemble_payload(asset: str, genome: Genome, trades: list[dict[str, Any]],
         "metrics": metrics,
         "significance": significance,
         "trades": trades,
+        "curve": build_equity_curve([t["netR"] for t in trades], risk_pct),
         "source": {"provider": "evolab", "note": "EvoLab genome via simulate_signal (all-taker)"},
         "evolab": {
             "family": genome.family,
