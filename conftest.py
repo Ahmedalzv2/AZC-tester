@@ -64,3 +64,7 @@ if not _module_available("alpaca"):
     collect_ignore += ["tests/test_execution_guard.py"]
 if not _module_available("ib_async"):
     collect_ignore += ["tests/test_ibkr_futures.py"]
+# storage.py (main-lab run store) is a separate working-tree module not carried
+# on this branch; skip its test where the module isn't importable.
+if not _module_available("storage"):
+    collect_ignore += ["tests/test_runs_ingest.py"]
