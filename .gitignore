@@ -41,3 +41,5 @@ evolab/runs.jsonl
 evolab/fixtures/
 # Why: proven-universe search state, same as evolab/state/.
 evolab/state-proven/
+# Why: live paper-trade NAV/order logs are runtime state.
+execution/*.jsonl
