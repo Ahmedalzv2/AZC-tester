@@ -7,11 +7,15 @@ grid) so EvoLab searches the exact same bars.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from engine_bracket import Bar, resample_positional
 
-FIX = Path("/root/apps/ict-autopilot/tests/fixtures")
+# The deep AZC tapes live in a sibling project on the host. Override with
+# AZC_FIXTURES where they sit elsewhere (e.g. CI, another box); absence is not an
+# error — the gateway just discovers an empty basket.
+FIX = Path(os.environ.get("AZC_FIXTURES", "/root/apps/ict-autopilot/tests/fixtures"))
 
 
 def _discover_markets() -> dict[str, tuple[str, int]]:
@@ -23,9 +27,15 @@ def _discover_markets() -> dict[str, tuple[str, int]]:
     Stem shape: "<SYM>-<N>d-Min60". Period 4 = hourly -> 4h (AZC cadence).
     """
     best: dict[str, tuple[int, str]] = {}
-    if not FIX.exists():
+    try:
+        if not FIX.exists():
+            return {}
+        fixtures = sorted(FIX.glob("*-Min60.json"))
+    except OSError:
+        # Path unreadable (e.g. EACCES on a CI runner where the sibling project
+        # isn't mounted): treat as an empty basket, never crash at import.
         return {}
-    for path in sorted(FIX.glob("*-Min60.json")):
+    for path in fixtures:
         stem = path.stem  # e.g. SOL-1825d-Min60
         parts = stem.split("-")
         if len(parts) < 3:
