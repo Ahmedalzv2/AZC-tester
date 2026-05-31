@@ -44,10 +44,49 @@ def _pvalue(arr: np.ndarray) -> float:
     return float(bootstrap_pvalue(a, seed=P_SEED)) if a.size >= 2 else 1.0
 
 
+# Acklam's inverse-normal-CDF approximation (|err| < 1.15e-9), no scipy needed.
+_A = (-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+      1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00)
+_B = (-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+      6.680131188771972e+01, -1.328068155288572e+01)
+_C = (-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+      -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00)
+_D = (7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+      3.754408661907416e+00)
+
+
+def _probit(p: float) -> float:
+    """Standard-normal quantile Phi^-1(p) for p in (0, 1)."""
+    if p <= 0.02425:
+        q = (-2.0 * np.log(p)) ** 0.5
+        return (((((_C[0]*q+_C[1])*q+_C[2])*q+_C[3])*q+_C[4])*q+_C[5]) / \
+               ((((_D[0]*q+_D[1])*q+_D[2])*q+_D[3])*q+1.0)
+    if p < 0.97575:
+        q = p - 0.5
+        r = q * q
+        return (((((_A[0]*r+_A[1])*r+_A[2])*r+_A[3])*r+_A[4])*r+_A[5])*q / \
+               (((((_B[0]*r+_B[1])*r+_B[2])*r+_B[3])*r+_B[4])*r+1.0)
+    q = (-2.0 * np.log(1.0 - p)) ** 0.5
+    return -(((((_C[0]*q+_C[1])*q+_C[2])*q+_C[3])*q+_C[4])*q+_C[5]) / \
+            ((((_D[0]*q+_D[1])*q+_D[2])*q+_D[3])*q+1.0)
+
+
+def _critical_t(alpha_deflated: float) -> float:
+    """One-sided Bonferroni t-bar for a deflated alpha. Continuous (no resolution
+    floor, unlike a 2000-iter bootstrap p), so an exceptional edge can always
+    clear it; floored at 2.0 so the bar never loosens below the original gate.
+    With n>=MIN_OOS_TRADES the normal quantile approximates the t critical value."""
+    a = min(0.5, max(alpha_deflated, 1e-300))  # clamp: log(0) guard, never loosen past 0.5
+    return max(2.0, -_probit(a))
+
+
 def _passes_gate(is_score, oos_n, oos_mean, oos_t, oos_p, alpha_deflated) -> bool:
+    # oos_p is retained for reporting; it is NOT the binding constraint — a 2000-
+    # iteration bootstrap floors at ~5e-4, which made `oos_p < alpha_deflated`
+    # unsatisfiable once cumulative trials pushed alpha below that floor.
     return bool(
         oos_n >= MIN_OOS_TRADES and oos_mean > 0 and is_score > 0
-        and oos_t >= 2.0 and oos_p < alpha_deflated
+        and oos_t >= _critical_t(alpha_deflated)
     )
 
 

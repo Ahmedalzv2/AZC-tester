@@ -60,10 +60,26 @@ def test_assess_rejects_unknown_family():
 
 
 def test_deflation_tightens_with_trials():
+    # Marginal edge (t a few units) should pass a loose bar but fail a strict one
+    # — the deflated alpha tightens the t-threshold, not an unsatisfiable p-floor.
     series = np.concatenate([np.full(50, 0.05), np.full(50, -0.01)])
     p = fitness._pvalue(series)
     t = fitness._tstat(series)
     loose = fitness._passes_gate(0.02, series.size, float(series.mean()), t, p, alpha_deflated=0.05)
-    strict = fitness._passes_gate(0.02, series.size, float(series.mean()), t, p, alpha_deflated=1e-6)
-    assert loose != strict or (loose is False and strict is False)
+    # alpha so tiny its critical-t exceeds this series' modest NW t-stat
+    strict = fitness._passes_gate(0.02, series.size, float(series.mean()), t, p, alpha_deflated=1e-30)
+    assert loose is True
     assert strict is False
+
+
+def test_strong_signal_still_passes_under_heavy_deflation():
+    # The bug: a genome with an enormous OOS t-stat (NW t ~ 8) was rejected once
+    # ~100 lifetime trials accumulated, because the bootstrap p-value floors at
+    # ~5e-4 while alpha_deflated kept shrinking below it. A continuous t-bar must
+    # let a genuinely exceptional edge through no matter how deflated the alpha.
+    strong = np.array([0.3] * 100 + [-0.1] * 20)
+    assert fitness._passes_gate(
+        is_score=float(strong.mean()), oos_n=strong.size, oos_mean=float(strong.mean()),
+        oos_t=fitness._tstat(strong), oos_p=fitness._pvalue(strong),
+        alpha_deflated=0.05 / 5000,  # ~5000 lifetime trials
+    ) is True
