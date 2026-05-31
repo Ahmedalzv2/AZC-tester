@@ -43,3 +43,5 @@ evolab/fixtures/
 evolab/state-proven/
 # Why: live paper-trade NAV/order logs are runtime state.
 execution/*.jsonl
+# Why: grid NAV is runtime state (rejected-strategies.jsonl stays tracked as memory).
+lanes/grid-nav.jsonl

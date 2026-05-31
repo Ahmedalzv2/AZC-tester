@@ -89,6 +89,34 @@ class AlpacaPaper:
                 out.append({"price": float(o.limit_price), "side": o.side.value})
         return out
 
+    def position_detail(self, symbol: str) -> dict:
+        """{qty, market_value, unrealized_pl} for a symbol; zeros if flat."""
+        try:
+            p = self.client.get_open_position(symbol)
+            return {"qty": float(p.qty), "market_value": float(p.market_value),
+                    "unrealized_pl": float(p.unrealized_pl)}
+        except Exception:
+            return {"qty": 0.0, "market_value": 0.0, "unrealized_pl": 0.0}
+
+    def cancel_open_orders(self, symbol: str) -> int:
+        """Cancel all resting orders for a symbol; returns count attempted."""
+        reqf = GetOrdersRequest(status=QueryOrderStatus.OPEN, symbols=[symbol])
+        orders = self.client.get_orders(filter=reqf)
+        if self.dry_run:
+            return len(orders)
+        for o in orders:
+            try:
+                self.client.cancel_order_by_id(o.id)
+            except Exception:
+                pass
+        return len(orders)
+
+    def close(self, symbol: str) -> str:
+        if self.dry_run:
+            return f"DRY close {symbol}"
+        self.client.close_position(symbol)
+        return f"closed {symbol}"
+
     def submit_limit(self, symbol: str, qty: float, side: str, limit_price: float) -> str:
         """Place a GTC limit order (crypto). Dry-run logs the intent."""
         if self.dry_run:

@@ -66,6 +66,14 @@ def _main(argv: list[str] | None = None) -> int:
         from datetime import datetime, timezone
         date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
+    # Self-policing: once invalidated, never re-run (that's the whole point).
+    sig = registry.signature("trend", {**TREND_PARAMS, "instrument": "perp", "funding": True},
+                             VENUE, args.symbol)
+    hit, entry = registry.is_rejected(sig)
+    if hit:
+        print(f"[perp-sim] {args.symbol} already RETIRED ({entry['date']}): {entry['reason']} — skipping")
+        return 0
+
     track = simulate_perp(args.symbol)
     verdict = evaluate(track)
     print(f"[perp-sim] {args.symbol} trend  n={track.n_trades} days={track.days} "
