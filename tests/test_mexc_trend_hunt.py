@@ -81,6 +81,28 @@ def test_hac_t_zero_mean_is_small():
     assert abs(hac_t(x)) < 3.0
 
 
+def test_crosssec_no_lookahead():
+    """A change to the FINAL date's closes must not alter any earlier period's
+    realised return — books are formed from past closes only (no lookahead)."""
+    from cross_sectional_mexc import run
+    rng = random.Random(3)
+    syms = [f"A{i}" for i in range(40)]
+    dates = [d * 86400 for d in range(200)]
+    by = {}
+    for s in syms:
+        c, series = 100.0, {}
+        for t in dates:
+            c *= 1 + rng.gauss(0, 0.04)
+            series[t] = c
+        by[s] = series
+    base = run(by, syms, dates, lookback=14, hold=7, frac=0.1, direction="momentum", fee=0.0)
+    by2 = {s: dict(v) for s, v in by.items()}
+    for s in syms:  # corrupt only the very last date
+        by2[s][dates[-1]] = rng.uniform(1, 1e6)
+    pert = run(by2, syms, dates, lookback=14, hold=7, frac=0.1, direction="momentum", fee=0.0)
+    assert base[:-1] == pert[:-1], "a future-date change altered a past period -> LOOKAHEAD"
+
+
 def test_eff_ratio_bounds():
     bars = _synth()
     for i in range(50, len(bars)):

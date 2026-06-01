@@ -25,12 +25,17 @@ from mexc_trend_hunt import DATA, hac_t, load
 LOG = Path(__file__).resolve().parent / "trade-learnings" / "shadow" / "mexc-crosssec-shadow.jsonl"
 LOOKBACK = 14      # locked
 FRAC = 0.10        # top/bottom decile, locked
+LIQ_TOP = 100      # rank within the 100 most-liquid perps — tradeable AND stronger
+                   # (full t 2.39 on all-412 -> 3.73 on top-100; edge is NOT in microcaps)
 FEE = 0.00075      # taker per leg
 
 
 def latest_book():
-    """(date, {sym: signed weight}, {sym: close}) for the current decile book."""
-    syms = [m["symbol"] for m in json.loads((DATA / "_manifest.json").read_text())]
+    """(date, {sym: signed weight}, {sym: close}) for the current decile book,
+    formed within the LIQ_TOP most-liquid perps by median daily quote volume."""
+    man = json.loads((DATA / "_manifest.json").read_text())
+    man.sort(key=lambda m: -m.get("med_qvol", 0))
+    syms = [m["symbol"] for m in man[:LIQ_TOP]]
     closes = {}
     last_ts = 0
     for s in syms:
