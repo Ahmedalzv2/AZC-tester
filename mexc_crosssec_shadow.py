@@ -34,7 +34,12 @@ FEE = 0.00075      # taker per leg
 def latest_book():
     """(date, {sym: signed weight}, {sym: close}) for the current decile book,
     formed within the LIQ_TOP most-liquid perps by median daily quote volume."""
-    man = json.loads((DATA / "_manifest.json").read_text())
+    manifest = DATA / "_manifest.json"
+    if not manifest.exists():
+        raise SystemExit("universe cache missing — run scripts/fetch_mexc_universe.py first "
+                         "(the daily curate fetches before rolling, so this only bites a "
+                         "standalone run after a prune).")
+    man = json.loads(manifest.read_text())
     man.sort(key=lambda m: -m.get("med_qvol", 0))
     syms = [m["symbol"] for m in man[:LIQ_TOP]]
     closes = {}
