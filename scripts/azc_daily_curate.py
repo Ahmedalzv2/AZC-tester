@@ -46,9 +46,11 @@ def main() -> None:
     out = []
     # 1. FETCH (refresh the universe cache)
     out.append("[fetch] " + sh("scripts/fetch_mexc_universe.py").strip().splitlines()[-1])
-    # 2. ROLL the shadow lane (weekly cadence enforced inside)
+    # 2. ROLL the shadow lanes (each enforces its own cadence inside)
     roll = sh("mexc_crosssec_shadow.py").strip().splitlines()
-    out.append("[roll] " + (roll[-1] if roll else "(no output)"))
+    out.append("[roll:crypto-xsec] " + (roll[-1] if roll else "(no output)"))
+    eroll = sh("equity_xsec_shadow.py").strip().splitlines()
+    out.append("[roll:equity-12-1] " + (eroll[-1] if eroll else "(no output)"))
 
     # 3. CURATE — read forward marks, keep best-summary, auto-invalidate on real failure
     from mexc_trend_hunt import hac_t
