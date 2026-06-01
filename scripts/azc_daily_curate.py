@@ -96,7 +96,18 @@ def main() -> None:
                     "mean_pct_per_week": round(fwd_mean * 100, 3)},
         "status": status,
     }, indent=2))
-    out.append(f"[curate] forward periods={len(marks)} t={fwd_t:+.2f} -> {status}")
+    out.append(f"[curate] crypto-xsec forward periods={len(marks)} t={fwd_t:+.2f} -> {status}")
+
+    # 3b. equity 12-1 lane forward report (separate log; flag PROMOTE-READY at t>=2)
+    eq_log = ROOT / "trade-learnings" / "shadow" / "equity-xsec-shadow.jsonl"
+    if eq_log.exists():
+        eq_marks = [json.loads(l)["mark"]["excess_net"] for l in eq_log.read_text().splitlines()
+                    if l.strip() and json.loads(l).get("mark")]
+        eq_t = hac_t(eq_marks) if len(eq_marks) >= 2 else 0.0
+        eq_flag = "  *** PROMOTE-READY (forward t>=2) -> consider Alpaca paper ***" if eq_t >= 2.0 else ""
+        out.append(f"[curate] equity-12-1 forward months={len(eq_marks)} t={eq_t:+.2f}{eq_flag}")
+    if fwd_t >= 2.0 and len(marks) >= MIN_FWD_PERIODS:
+        out.append("[curate] *** crypto-xsec PROMOTE-READY (forward t>=2) ***")
 
     # 4. PRUNE bulky regenerable data (kept: registry, shadow log, best-summary)
     pruned = 0
