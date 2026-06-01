@@ -24,6 +24,7 @@ from mexc_trend_hunt import DATA, hac_t, load
 
 LOG = Path(__file__).resolve().parent / "trade-learnings" / "shadow" / "mexc-crosssec-shadow.jsonl"
 LOOKBACK = 14      # locked
+HOLD = 7           # locked weekly hold; the lane rolls only every HOLD days
 FRAC = 0.10        # top/bottom decile, locked
 LIQ_TOP = 100      # rank within the 100 most-liquid perps — tradeable AND stronger
                    # (full t 2.39 on all-412 -> 3.73 on top-100; edge is NOT in microcaps)
@@ -94,13 +95,19 @@ def main() -> None:
         return
     LOG.parent.mkdir(parents=True, exist_ok=True)
     ts, w, px = latest_book()
-    # mark the last still-open book against today's prices
+    # The strategy holds HOLD days. This script is safe to call DAILY: only roll
+    # the book (mark prior + open new) once >= HOLD days have elapsed, so a daily
+    # cron never corrupts the weekly cadence.
     mark_block = None
     if LOG.exists():
         lines = [l for l in LOG.read_text().splitlines() if l.strip()]
         if lines:
             prev = json.loads(lines[-1])
-            mark_block = mark(prev, px) if prev.get("date") != ts else None
+            elapsed_days = (ts - prev.get("date", 0)) / 86400
+            if elapsed_days < HOLD:
+                print(f"not due ({elapsed_days:.1f}d < {HOLD}d since last book) — no roll")
+                return
+            mark_block = mark(prev, px)
     entry = {"date": ts, "lookback": LOOKBACK, "frac": FRAC,
              "weights": w, "prices": px, "mark": mark_block}
     with LOG.open("a") as f:
