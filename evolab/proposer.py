@@ -8,13 +8,13 @@ and seeded into the population — they then go through the exact same
 every other genome. The LLM only widens where the search looks; it cannot lower
 the honest significance bar.
 
-Provider-agnostic: any OpenAI-compatible /chat/completions endpoint (OpenRouter,
-DeepSeek, OpenAI, a local llama.cpp server, ...) via env, using only stdlib
+Provider-agnostic: any OpenAI-compatible /chat/completions endpoint. Direct
+provider first (OpenAI, DeepSeek, a local server, ...) via env, using only stdlib
 urllib (no new dependency):
 
     EVOLAB_LLM_API_KEY   required to enable the proposer at all
-    EVOLAB_LLM_BASE_URL  default https://openrouter.ai/api/v1
-    EVOLAB_LLM_MODEL     default deepseek/deepseek-chat
+    EVOLAB_LLM_BASE_URL  default https://api.openai.com/v1
+    EVOLAB_LLM_MODEL     default gpt-4o-mini
 
 No key set -> client_from_env() returns None -> the search runs as a pure GA,
 exactly as before. Every failure path (no key, network error, garbage output)
@@ -29,8 +29,8 @@ from typing import Any
 
 from evolab.genome import PARAM_SCHEMAS, Genome, coerce, genome_key
 
-_DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
-_DEFAULT_MODEL = "deepseek/deepseek-chat"
+_DEFAULT_BASE_URL = "https://api.openai.com/v1"
+_DEFAULT_MODEL = "gpt-4o-mini"
 _TIMEOUT_S = 60
 
 

@@ -128,6 +128,14 @@ def test_client_from_env_builds_with_key(monkeypatch):
     assert c is not None and c.model == "my-model"
 
 
+def test_default_base_is_direct_provider_not_openrouter(monkeypatch):
+    monkeypatch.setenv("EVOLAB_LLM_API_KEY", "secret")
+    monkeypatch.delenv("EVOLAB_LLM_BASE_URL", raising=False)
+    c = proposer.client_from_env()
+    assert "openrouter" not in c.base_url
+    assert c.base_url == "https://api.openai.com/v1"
+
+
 # ── propose — orchestration, never raises into the search loop ────────────────
 class _FakeClient:
     def __init__(self, text):
