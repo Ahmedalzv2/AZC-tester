@@ -127,6 +127,27 @@ def mutate(genome: Genome, rng: random.Random, n_params: int = 1) -> Genome:
     return Genome(genome.family, _repair(genome.family, params))
 
 
+def coerce(family: str, params: dict[str, Any]) -> Genome | None:
+    """Turn an arbitrary (family, params) — e.g. from an LLM proposal — into a
+    legal Genome, or None if it can't be salvaged. Unknown family -> None; any
+    required param missing -> None (we never fabricate knobs); present params are
+    clamped to the schema grid and cross-param constraints repaired. Extra keys
+    are dropped. This is the gate that lets untrusted proposals enter the search
+    without ever producing an illegal config."""
+    schema = PARAM_SCHEMAS.get(family)
+    if schema is None:
+        return None
+    out: dict[str, Any] = {}
+    for name, spec in schema.items():
+        if name not in params:
+            return None
+        try:
+            out[name] = _clamp(spec, params[name])
+        except (TypeError, ValueError):
+            return None
+    return Genome(family, _repair(family, out))
+
+
 def crossover(a: Genome, b: Genome, rng: random.Random) -> Genome:
     """Same-family uniform crossover. Different families: clone one parent."""
     if a.family != b.family:

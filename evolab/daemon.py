@@ -21,7 +21,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from evolab import data
+from evolab import data, proposer
 from evolab.search import STATE_DIR, run_search
 from evolab.store import Store, write_json_atomic
 from evolab.genome import Genome
@@ -79,6 +79,10 @@ def maybe_publish_champion(result: dict, store: Store) -> None:
 GENS_PER_VISIT = int(os.environ.get("EVOLAB_GENS_PER_VISIT", "3"))
 SLEEP_SECONDS = int(os.environ.get("EVOLAB_SLEEP_SECONDS", "30"))
 POP = int(os.environ.get("EVOLAB_POP", "24"))
+# Proposer stall threshold for the daemon's short visits. Low by default so a
+# stalled asset can draw an LLM proposal within a 3-gen visit (only matters when
+# EVOLAB_LLM_API_KEY is set; otherwise the proposer is disabled entirely).
+STALL_GENS = int(os.environ.get("EVOLAB_STALL_GENS", "2"))
 
 _stop = False
 
@@ -125,9 +129,12 @@ def one_cycle(
     gens: int = GENS_PER_VISIT,
     pop: int = POP,
     state_dir: Path | None = None,
+    propose_fn=None,
+    stall_gens: int = STALL_GENS,
 ) -> list[str]:
     """Evolve every asset once. A failing asset is logged and skipped, never
-    aborts the cycle. Returns the assets that advanced this cycle."""
+    aborts the cycle. Returns the assets that advanced this cycle. `propose_fn`,
+    when set, enables the LLM proposer on stalled assets (Phase 3)."""
     state_dir = state_dir or store.base
     advanced: list[str] = []
     for asset in assets:
@@ -138,6 +145,7 @@ def one_cycle(
             result = run_search(
                 asset, bars, generations=gens, pop_size=pop,
                 seed=cycle, store=store, ts=_now_ms(),
+                propose_fn=propose_fn, stall_gens=stall_gens,
             )
             advanced.append(asset)
             champ = result.get("champion")
@@ -162,13 +170,19 @@ def run_daemon() -> int:
 
     store = Store(STATE_DIR)
     bars_cache: dict[str, list] = {}
+
+    # LLM proposer (Phase 3): enabled only when EVOLAB_LLM_API_KEY is set.
+    _client = proposer.client_from_env()
+    propose_fn = (lambda recent, champ, n: proposer.propose(_client, recent, champ, n)) if _client else None
+    proposer_state = f"ENABLED (model={_client.model})" if _client else "disabled (no EVOLAB_LLM_API_KEY)"
+
     print(f"[evolab] daemon up: assets={assets} gens/visit={GENS_PER_VISIT} "
-          f"sleep={SLEEP_SECONDS}s pop={POP}", flush=True)
+          f"sleep={SLEEP_SECONDS}s pop={POP} proposer={proposer_state}", flush=True)
 
     cycle = 0
     while not _stop:
         cycle += 1
-        one_cycle(assets, bars_cache, store, cycle=cycle)
+        one_cycle(assets, bars_cache, store, cycle=cycle, propose_fn=propose_fn)
         # Sleep in short slices so SIGTERM is honoured promptly.
         slept = 0
         while slept < SLEEP_SECONDS and not _stop:
