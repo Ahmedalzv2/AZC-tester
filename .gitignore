@@ -45,3 +45,13 @@ evolab/state-proven/
 execution/*.jsonl
 # Why: grid NAV is runtime state (rejected-strategies.jsonl stays tracked as memory).
 lanes/grid-nav.jsonl
+
+# Why: per-asset EvoLab/hunter search state dirs are runtime state, not source.
+state-binance-*/
+state-hunter-*/
+# Why: root-level research result logs are disposable runtime output.
+/*.jsonl
+# Why: silver-bullet alert dedup state is runtime, not source.
+sb_alert_state.json
+# Why: editor backup copies should never be committed.
+*.bak

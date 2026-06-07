@@ -37,7 +37,15 @@ def available_fixtures() -> list[str]:
 class AzcFixtureProvider(BaseDataProvider):
     name = "azc_fixture"
     label = "AZC Crypto Fixtures (DOGE/SOL/XRP)"
-    supports_files = False
+    family = "fixture_catalog"
+    supports_remote = False
+    supports_catalog = True
+    supported_intervals = ["5m", "15m", "1h"]
+    asset_classes = ["crypto-perp"]
+    notes = "Reads the exact AZC fixture tape from the local repo for repeatable crypto research."
+
+    def catalog(self) -> list[str]:
+        return available_fixtures()
 
     def fetch(self, request: DatasetRequest) -> DatasetResponse:
         symbol = (request.symbol or "").strip()

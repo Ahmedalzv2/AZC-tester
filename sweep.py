@@ -17,7 +17,9 @@ from typing import Any
 import pandas as pd
 
 from engine import run_backtest
-from stats import significance
+from overfit import deflated_sharpe_ratio, sharpe_moments
+from stats import returns_from_curve, significance
+from strategies import STRATEGIES
 
 
 def expand_grid(grid: dict[str, list[Any]]) -> list[dict[str, Any]]:
@@ -44,6 +46,17 @@ def run_sweep(
     base_params = base_params or {}
     combos = expand_grid(grid)
 
+    # Bracket bars depend only on the data, not the grid params, so build the
+    # 4h-aggregated series ONCE and reuse it for every combo. Previously every
+    # combo re-ran to_bars + resample on identical data (N transforms for an
+    # N-combo grid) — the dominant cost of a sweep.
+    prepared_bars = None
+    spec = STRATEGIES.get(strategy_name)
+    if spec is not None and getattr(spec, "execution", "position") == "bracket":
+        from engine_bracket import prepare_bracket_bars
+
+        prepared_bars = prepare_bracket_bars(df.copy().sort_index())
+
     runs: list[dict[str, Any]] = []
     for combo in combos:
         params = {**base_params, **combo}
@@ -56,14 +69,26 @@ def run_sweep(
                 fee_bps=fee_bps,
                 custom_code=custom_code,
                 interval=interval,
+                prepared_bars=prepared_bars,
             )
             sig = significance(result.curve, iterations=iterations)
+            # Per-trial Sharpe + moments for the Deflated Sharpe Ratio. Bracket
+            # strategies expose per-trade-netR moments in their own significance
+            # block (the honest basis); the position engine derives them from the
+            # equity-curve returns.
+            bsig = result.metrics.get("significance")
+            if bsig and bsig.get("basis") == "per-trade netR":
+                moments = {"sharpe": bsig.get("sharpe", 0.0), "n": bsig.get("n", 0),
+                           "skew": bsig.get("skew", 0.0), "kurt": bsig.get("kurt", 3.0)}
+            else:
+                moments = sharpe_moments(returns_from_curve(result.curve))
             runs.append(
                 {
                     "params": combo,
                     "metrics": result.metrics,
                     "significance": sig,
                     "error": None,
+                    "_moments": moments,
                 }
             )
         except Exception as exc:  # one bad combo shouldn't sink the sweep
@@ -88,9 +113,40 @@ def run_sweep(
     runs.sort(key=sort_key, reverse=True)
 
     best = next((r for r in runs if r.get("metrics") is not None), None)
+
+    # Deflate the winner's Sharpe by how many configs were tried. The top of any
+    # grid is the luckiest draw; the DSR asks whether it survives that selection.
+    overfit_block = _overfit_verdict(runs, best)
+
+    # _moments is an internal scratch field — strip before returning.
+    for r in runs:
+        r.pop("_moments", None)
+
     return {
         "count": len(runs),
         "sort_by": sort_by,
         "best": best,
+        "overfit": overfit_block,
         "runs": runs,
+    }
+
+
+def _overfit_verdict(runs: list[dict[str, Any]], best: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Deflated Sharpe Ratio verdict for the swept winner vs the whole field."""
+    valid = [r for r in runs if r.get("_moments") is not None]
+    if not valid or best is None or best.get("_moments") is None:
+        return None
+    trials_sharpes = [r["_moments"]["sharpe"] for r in valid]
+    bm = best["_moments"]
+    dsr = deflated_sharpe_ratio(bm["sharpe"], int(bm["n"]), bm["skew"], bm["kurt"], trials_sharpes)
+    survives = bool(dsr["dsr"] >= 0.95)
+    return {
+        "n_configs": len(valid),
+        "best_sharpe": round(float(bm["sharpe"]), 6),
+        "dsr": round(dsr["dsr"], 4),
+        "psr_vs_zero": round(dsr["psr_vs_zero"], 4),
+        "sr_star": round(dsr["sr_star"], 6),
+        "survives_multiple_testing": survives,
+        "verdict": "survives multiple testing" if survives
+        else "likely overfit — winner is selection noise",
     }

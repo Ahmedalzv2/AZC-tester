@@ -61,8 +61,9 @@ def run_backtest(
     fee_bps: float = 10,
     custom_code: str | None = None,
     interval: str = "1d",
+    prepared_bars: list[Any] | None = None,
 ) -> BacktestResult:
-    if df.empty:
+    if df is not None and df.empty:
         raise ValueError("No data available for backtest")
 
     # AZC bracket strategies use a stop/target execution engine, not the
@@ -74,12 +75,15 @@ def run_backtest(
         merged = {**spec.params, **(params or {})}
         # resample factor to 4h is auto-detected from the data's bar spacing
         # inside the engine, so any loaded interval (5m/15m/1h) works.
+        # prepared_bars (when a sweep pre-built them) skips the per-call
+        # to_bars + resample; df is then unused.
         metrics, curve, trade_rows = run_bracket_backtest(
-            df=df.copy().sort_index(),
+            df=df.copy().sort_index() if prepared_bars is None else None,
             params=merged,
             initial_cash=initial_cash,
             interval=interval,
             resample_per=None,
+            bars=prepared_bars,
         )
         metrics["strategy"] = strategy_name
         return BacktestResult(metrics=metrics, curve=curve, trades=trade_rows)
@@ -130,6 +134,15 @@ def run_backtest(
     annualized = (equity.iloc[-1] / initial_cash) ** (bars_per_year / max(len(clean), 1)) - 1
     sharpe_denominator = strategy_returns.std(ddof=0)
     sharpe = 0.0 if sharpe_denominator == 0 else (strategy_returns.mean() / sharpe_denominator) * np.sqrt(bars_per_year)
+    # Sortino: punish only downside deviation (returns below the 0% target),
+    # annualized like Sharpe. Upside volatility is not risk.
+    downside = strategy_returns[strategy_returns < 0]
+    downside_dev = float(np.sqrt((downside.astype(float) ** 2).mean())) if len(downside) else 0.0
+    sortino = 0.0 if downside_dev == 0 else (strategy_returns.mean() / downside_dev) * np.sqrt(bars_per_year)
+    # Profit factor: gross win / gross loss across closed trades. >1 is net positive.
+    gross_win = sum(t["pnl_pct"] for t in trades if t["pnl_pct"] > 0)
+    gross_loss = -sum(t["pnl_pct"] for t in trades if t["pnl_pct"] < 0)
+    profit_factor = (gross_win / gross_loss) if gross_loss > 0 else (float("inf") if gross_win > 0 else 0.0)
     win_rate = 0.0
     if trades:
         win_rate = sum(1 for trade in trades if trade["pnl_pct"] > 0) / len(trades)
@@ -156,6 +169,8 @@ def run_backtest(
         "annualized_return_pct": round(float(annualized) * 100, 3),
         "max_drawdown_pct": round(float(drawdown.min()) * 100, 3),
         "sharpe": round(float(sharpe), 3),
+        "sortino": round(float(sortino), 3),
+        "profit_factor": round(float(profit_factor), 3) if profit_factor != float("inf") else None,
         "trade_count": int(len(trades)),
         "win_rate_pct": round(float(win_rate) * 100, 3),
         "exposure_pct": round(float(position.abs().mean()) * 100, 3),

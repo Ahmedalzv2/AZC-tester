@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Backtest Lab</title>
-    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
@@ -12,200 +12,347 @@
       <section class="hero card">
         <div>
           <div class="eyebrow">BACKTEST LAB</div>
-          <h1>Fast strategy dashboard</h1>
-          <p>Run generic strategy research across pluggable data providers instead of hard-coding one market or one feed.</p>
+          <h1>Strategy research without fake data depth</h1>
+          <p>Run backtests across multiple data sources, keep saved runs, and compare ideas without pretending weak feeds have more history than they do.</p>
         </div>
         <div class="hero-note">
-          <div>Providers: Yahoo + local CSV/Parquet</div>
-          <div>Engine stays market-agnostic</div>
+          <div class="hero-note-title">What this app is good at</div>
+          <div class="hero-pills">
+            <span class="pill">Market-agnostic engine</span>
+            <span class="pill">Saved runs</span>
+            <span class="pill">Compare mode</span>
+            <span class="pill">Dataset history</span>
+          </div>
+          <p class="muted tight">Yahoo is fine for daily bars. Local files or real exchange feeds are the right path for deep intraday research.</p>
         </div>
       </section>
 
-      <section class="grid">
-        <form id="run-form" class="card form-panel">
-          <h2>Run backtest</h2>
-          <div class="form-grid">
-            <label>
-              Data provider
-              <select name="data_provider" id="provider-select"></select>
-            </label>
-            <label>
-              Symbol
-              <input name="symbol" value="SPY" />
-            </label>
-            <label>
-              Interval
-              <select name="interval">
-                <option value="1d" selected>1d</option>
-                <option value="1wk">1wk</option>
-                <option value="1mo">1mo</option>
-                <option value="1h">1h</option>
-                <option value="15m">15m</option>
-                <option value="5m">5m</option>
-              </select>
-            </label>
-            <label>
-              Years
-              <input name="years" type="number" min="1" max="10" value="5" />
-            </label>
-            <label>
-              Market tag
-              <input name="market" placeholder="stocks, crypto, forex, index" />
-            </label>
-            <label>
-              Timezone
-              <input name="timezone" value="UTC" />
-            </label>
-            <label>
-              Session tag
-              <input name="session" placeholder="rth, 24x7, london, ny" />
-            </label>
-            <label>
-              Initial cash
-              <input name="initial_cash" type="number" min="100" step="100" value="10000" />
-            </label>
-            <label>
-              Fee bps
-              <input name="fee_bps" type="number" min="0" step="1" value="10" />
-            </label>
-            <label>
-              Strategy
-              <select name="strategy" id="strategy-select"></select>
-            </label>
-          </div>
+      <section class="tab-shell card">
+        <div class="tab-bar" role="tablist" aria-label="Backtest Lab sections">
+          <button type="button" class="tab-button active" data-tab="backtest" role="tab" aria-selected="true">Backtest</button>
+          <button type="button" class="tab-button" data-tab="research" role="tab" aria-selected="false">Research</button>
+          <button type="button" class="tab-button" data-tab="history" role="tab" aria-selected="false">History</button>
+        </div>
+        <p class="muted tight tab-note">Backtest for execution and charts. Research for sweep and walk-forward. History for saved runs, compare, and data provenance.</p>
+      </section>
 
-          <label id="file-path-label" class="hidden">
-            Local file path
-            <input name="file_path" id="file-path-input" placeholder="/root/data/my-bars.csv or .parquet" />
-          </label>
+      <section class="tab-panel active" data-tab-panel="backtest">
+        <section class="grid">
+          <form id="run-form" class="card form-panel">
+            <div class="section-head">
+              <div>
+                <h2>Run backtest</h2>
+                <p class="muted tight">Pick a provider, symbol, interval, and strategy. Advanced controls stay available, but the app now shows what history actually came back.</p>
+              </div>
+              <div class="status-pill-wrap">
+                <span id="status" class="status-pill">Idle</span>
+              </div>
+            </div>
 
-          <div class="row between">
-            <label class="checkbox">
-              <input name="refresh_data" type="checkbox" />
-              Force fresh data
+            <div class="form-grid">
+              <label>
+                Data provider
+                <select name="data_provider" id="provider-select"></select>
+              </label>
+              <label>
+                Symbol
+                <input name="symbol" value="SPY" />
+              </label>
+              <label>
+                Interval
+                <select name="interval">
+                  <option value="1d" selected>1d</option>
+                  <option value="1wk">1wk</option>
+                  <option value="1mo">1mo</option>
+                  <option value="1h">1h</option>
+                  <option value="15m">15m</option>
+                  <option value="5m">5m</option>
+                </select>
+              </label>
+              <label>
+                Years
+                <input name="years" type="number" min="1" max="10" value="5" />
+              </label>
+              <label>
+                Market tag
+                <input name="market" placeholder="stocks, crypto, forex, index" />
+              </label>
+              <label>
+                Timezone
+                <input name="timezone" value="UTC" />
+              </label>
+              <label>
+                Session tag
+                <input name="session" placeholder="rth, 24x7, london, ny" />
+              </label>
+              <label>
+                Initial cash
+                <input name="initial_cash" type="number" min="100" step="100" value="10000" />
+              </label>
+              <label>
+                Fee bps
+                <input name="fee_bps" type="number" min="0" step="1" value="10" />
+              </label>
+              <label>
+                Strategy
+                <select name="strategy" id="strategy-select"></select>
+              </label>
+            </div>
+
+            <label id="file-path-label" class="hidden">
+              Local file path
+              <input name="file_path" id="file-path-input" placeholder="/root/data/my-bars.csv or .parquet" />
             </label>
-            <button id="load-example" type="button" class="ghost">Load custom example</button>
-          </div>
 
-          <label>
-            Strategy params JSON
-            <textarea id="params" rows="7">{
+            <div class="row between wrap gap top-controls">
+              <label class="checkbox">
+                <input name="refresh_data" type="checkbox" />
+                Force fresh data
+              </label>
+              <button id="load-example" type="button" class="ghost">Load custom example</button>
+            </div>
+
+            <label>
+              Strategy params JSON
+              <textarea id="params" rows="7">{
   "fast": 20,
   "slow": 50
 }</textarea>
-          </label>
+            </label>
 
-          <label>
-            Custom Python strategy
-            <textarea id="custom_code" rows="14" placeholder="Only needed for custom_python strategy. Define build_signals(df, params)."></textarea>
-          </label>
+            <label>
+              Custom Python strategy
+              <textarea id="custom_code" rows="14" placeholder="Only needed for the custom Python strategy. Define build_signals(df, params)."></textarea>
+            </label>
 
-          <div class="row gap">
-            <button id="run-button" type="submit">Run</button>
-            <span id="status" class="status">Idle</span>
+            <div class="row gap wrap run-actions">
+              <button id="run-button" type="submit">Run backtest</button>
+              <span class="helper-inline">Results, saved runs, and dataset history refresh automatically.</span>
+            </div>
+          </form>
+
+          <section class="card metrics-panel">
+            <div class="section-head">
+              <div>
+                <h2>Results</h2>
+                <p class="muted tight">Headline metrics first. Provenance and raw details stay available below when needed.</p>
+              </div>
+            </div>
+            <div id="significance" class="verdict"></div>
+            <div id="dataset-summary" class="dataset-summary"></div>
+            <div id="metrics" class="metrics-grid"></div>
+            <details class="source-box">
+              <summary>Show raw source and request details</summary>
+              <pre id="source"></pre>
+            </details>
+          </section>
+        </section>
+
+        <section class="card chart-panel">
+          <h2>Price + equity</h2>
+          <p class="muted tight">Close and equity curves share the same time axis so you can see whether the strategy actually tracked the market move cleanly.</p>
+          <div class="chart-wrap">
+            <canvas id="price-chart" class="chart"></canvas>
           </div>
-        </form>
+        </section>
 
-        <section class="card metrics-panel">
-          <h2>Metrics</h2>
-          <div id="significance" class="verdict"></div>
-          <div id="metrics" class="metrics-grid"></div>
-          <div class="source-box">
-            <div class="eyebrow">SOURCE</div>
-            <pre id="source"></pre>
+        <section class="card chart-panel">
+          <h2>Drawdown</h2>
+          <p class="muted tight">Drawdown stays separate so the pain profile is obvious instead of hiding behind the equity line.</p>
+          <div class="chart-wrap">
+            <canvas id="drawdown-chart" class="chart"></canvas>
+          </div>
+        </section>
+
+        <section class="card trades-panel">
+          <h2>Recent trades</h2>
+          <p class="muted tight">Most recent completed trades first. Missing values are cleaned up instead of dumping raw nulls.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Entry</th>
+                  <th>Exit</th>
+                  <th>Side</th>
+                  <th>Entry Px</th>
+                  <th>Exit Px</th>
+                  <th>PnL %</th>
+                  <th>Equity After</th>
+                </tr>
+              </thead>
+              <tbody id="trades-body"></tbody>
+            </table>
           </div>
         </section>
       </section>
 
-      <section class="card sweep-panel">
-        <div class="row between">
-          <h2>Parameter sweep</h2>
-          <span id="sweep-status" class="status">Idle</span>
-        </div>
-        <p class="muted">Grid every combo, ranked best-first — each row carries its Newey-West t and bootstrap p so the top isn't just the luckiest overfit. Uses the strategy, provider, symbol and fee above.</p>
-        <div class="row gap wrap">
-          <label class="grow">
-            Sweep grid JSON (param &rarr; list of values)
-            <textarea id="sweep-grid" rows="5">{
+      <section class="tab-panel" data-tab-panel="research">
+        <section class="research-stack">
+          <details class="card sweep-panel details-card" open>
+            <summary class="details-summary">
+              <span class="summary-copy">
+                <span class="summary-title">Parameter sweep</span>
+                <span class="muted inline-muted">Rank parameter combinations without assuming the best curve is automatically real.</span>
+              </span>
+              <span id="sweep-status" class="status-pill">Idle</span>
+            </summary>
+            <p class="muted">Grid every combo, rank best-first, and show significance stats beside the curve so the leader is not just the luckiest overfit.</p>
+            <div class="row gap wrap">
+              <label class="grow">
+                Sweep grid JSON (param → list of values)
+                <textarea id="sweep-grid" rows="5">{
   "fast": [5, 10, 20],
   "slow": [30, 50, 100]
 }</textarea>
-          </label>
-          <label>
-            Sort by
-            <select id="sweep-sort">
-              <option value="total_return_pct" selected>Total Return %</option>
-              <option value="sharpe">Sharpe</option>
-              <option value="annualized_return_pct">Annualized %</option>
-              <option value="win_rate_pct">Win Rate %</option>
-              <option value="max_drawdown_pct">Max Drawdown %</option>
-            </select>
-          </label>
-          <button id="sweep-button" type="button">Run sweep</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Params</th>
-                <th>Total %</th>
-                <th>Sharpe</th>
-                <th>Max DD %</th>
-                <th>Trades</th>
-                <th>Win %</th>
-                <th>t (HAC)</th>
-                <th>p-value</th>
-                <th>Verdict</th>
-              </tr>
-            </thead>
-            <tbody id="sweep-body"></tbody>
-          </table>
-        </div>
+              </label>
+              <label>
+                Sort by
+                <select id="sweep-sort">
+                  <option value="total_return_pct" selected>Total Return %</option>
+                  <option value="sharpe">Sharpe</option>
+                  <option value="annualized_return_pct">Annualized %</option>
+                  <option value="win_rate_pct">Win Rate %</option>
+                  <option value="max_drawdown_pct">Max Drawdown %</option>
+                </select>
+              </label>
+              <button id="sweep-button" type="button">Run sweep</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Params</th>
+                    <th>Return %</th>
+                    <th>Sharpe</th>
+                    <th>Max DD %</th>
+                    <th>Trades</th>
+                    <th>Win %</th>
+                    <th>t (HAC)</th>
+                    <th>p-value</th>
+                    <th>Verdict</th>
+                  </tr>
+                </thead>
+                <tbody id="sweep-body"></tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="card walkforward-panel details-card" open>
+            <summary class="details-summary">
+              <span class="summary-copy">
+                <span class="summary-title">Walk-forward</span>
+                <span class="muted inline-muted">Check whether the idea survives on unseen data instead of dying right after optimization.</span>
+              </span>
+              <span id="wf-status" class="status-pill">Idle</span>
+            </summary>
+            <p class="muted">Run the same setup on an in-sample slice and an unseen out-of-sample tail. If the edge only lived in-sample, the OOS leg exposes it fast.</p>
+            <div class="row gap wrap">
+              <label>
+                OOS fraction
+                <input id="wf-oos" type="number" min="0.05" max="0.95" step="0.05" value="0.3" />
+              </label>
+              <button id="wf-button" type="button">Run walk-forward</button>
+            </div>
+            <div id="wf-result" class="wf-grid"></div>
+          </details>
+        </section>
       </section>
 
-      <section class="card walkforward-panel">
-        <div class="row between">
-          <h2>Walk-forward (out-of-sample holdout)</h2>
-          <span id="wf-status" class="status">Idle</span>
-        </div>
-        <p class="muted">Runs the same params on an in-sample slice and an unseen out-of-sample tail. If the edge only lived in-sample, the OOS leg and the decay number expose it. Uses the strategy/params/provider above.</p>
-        <div class="row gap wrap">
-          <label>
-            OOS fraction
-            <input id="wf-oos" type="number" min="0.05" max="0.95" step="0.05" value="0.3" />
-          </label>
-          <button id="wf-button" type="button">Run walk-forward</button>
-        </div>
-        <div id="wf-result" class="wf-grid"></div>
-      </section>
+      <section class="tab-panel" data-tab-panel="history">
+        <section class="triple-grid">
+          <section class="card history-panel">
+            <div class="row between wrap gap">
+              <div>
+                <h2>Saved runs</h2>
+                <p class="muted tight">Saved research runs with quick reload and side-by-side comparison.</p>
+              </div>
+              <div class="row gap wrap compact-actions">
+                <button id="refresh-runs" type="button" class="ghost small">Refresh</button>
+                <button id="compare-button" type="button" class="ghost small">Compare selected</button>
+                <span id="history-status" class="status-pill">Idle</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pick</th>
+                    <th>Created</th>
+                    <th>Type</th>
+                    <th>Symbol</th>
+                    <th>Strategy</th>
+                    <th>Setup</th>
+                    <th>Return %</th>
+                    <th>Sharpe</th>
+                    <th>Verdict</th>
+                    <th>Load</th>
+                  </tr>
+                </thead>
+                <tbody id="runs-body"></tbody>
+              </table>
+            </div>
+          </section>
 
-      <section class="card chart-panel">
-        <h2>Price + equity</h2>
-        <div id="price-chart" class="chart"></div>
-      </section>
+          <section class="card compare-panel">
+            <div class="row between wrap gap">
+              <div>
+                <h2>Compare</h2>
+                <p class="muted tight">Overlay normalized equity and compare the saved runs you selected on the left.</p>
+              </div>
+              <span id="compare-status" class="status-pill">Idle</span>
+            </div>
+            <div class="chart-wrap chart-wrap-small">
+              <canvas id="compare-chart" class="chart chart-small"></canvas>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Created</th>
+                    <th>Type</th>
+                    <th>Symbol</th>
+                    <th>Strategy</th>
+                    <th>Interval</th>
+                    <th>Return %</th>
+                    <th>Sharpe</th>
+                    <th>Max DD %</th>
+                    <th>Trades</th>
+                    <th>Verdict</th>
+                  </tr>
+                </thead>
+                <tbody id="compare-body">
+                  <tr><td colspan="10" class="empty-state">Pick saved runs and compare them here.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-      <section class="card chart-panel">
-        <h2>Drawdown</h2>
-        <div id="drawdown-chart" class="chart"></div>
-      </section>
-
-      <section class="card trades-panel">
-        <h2>Recent trades</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Entry</th>
-                <th>Exit</th>
-                <th>Entry Px</th>
-                <th>Exit Px</th>
-                <th>PnL %</th>
-                <th>Equity After</th>
-              </tr>
-            </thead>
-            <tbody id="trades-body"></tbody>
-          </table>
-        </div>
+          <details class="card dataset-panel details-card" open>
+            <summary class="details-summary">
+              <span class="summary-copy">
+                <span class="summary-title">Dataset history</span>
+                <span class="muted inline-muted">Shows what data was requested versus what coverage actually came back.</span>
+              </span>
+              <span id="dataset-status" class="status-pill">Idle</span>
+            </summary>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fetched</th>
+                    <th>Provider</th>
+                    <th>Symbol</th>
+                    <th>Request</th>
+                    <th>Rows</th>
+                    <th>Coverage returned</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody id="datasets-body"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
       </section>
     </main>
 

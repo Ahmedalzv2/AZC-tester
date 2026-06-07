@@ -1,0 +1,14 @@
+{
+  "strategy": "cross_sectional_momentum:top100liquid",
+  "in_sample": {
+    "hac_t": 3.73,
+    "sharpe": 1.79,
+    "bootstrap_p": "<1e-4"
+  },
+  "forward": {
+    "periods": 0,
+    "hac_t": 0.0,
+    "mean_pct_per_week": 0.0
+  },
+  "status": "accumulating"
+}

@@ -6,9 +6,10 @@ What it does:
 - runs a market-agnostic backtest engine against normalized OHLCV data
 - uses pluggable data providers instead of hard-coding one market/feed
 - caches Yahoo datasets locally under `data_cache/`
+- stores run history + dataset access history in DuckDB under `storage/`
 - loads local CSV or Parquet files directly by path
 - supports built-in strategies and custom Python strategy logic
-- serves a browser dashboard for charts, metrics, and future extensions
+- serves a browser dashboard for charts, metrics, saved runs, compare mode, and future extensions
 
 Current data providers:
 - `yahoo` — first remote adapter, still honest about intraday retention limits
@@ -47,8 +48,13 @@ API shape:
 - `GET /api/health`
 - `GET /api/providers`
 - `GET /api/strategies`
-- `POST /api/backtest`  — now includes a `significance` block
-- `POST /api/sweep`     — grid search + per-combo significance, ranked best-first
+- `GET /api/runs`         — recent saved research runs
+- `GET /api/runs/{id}`    — saved run detail + original result payload
+- `GET /api/datasets`     — recent dataset access history
+- `POST /api/backtest`    — includes a `significance` block and `run_id`
+- `POST /api/sweep`       — grid search + per-combo significance, ranked best-first, saved with `run_id`
+- `POST /api/walkforward` — OOS holdout verdict, saved with `run_id`
+- `POST /api/compare`     — compare selected saved runs by metrics + normalized equity curves
 
 Example sweep payload:
 ```json

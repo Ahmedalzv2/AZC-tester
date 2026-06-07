@@ -11,7 +11,11 @@ from providers.base import BaseDataProvider, DataSourceError, DatasetRequest, Da
 class LocalFileProvider(BaseDataProvider):
     name = "local_file"
     label = "Local CSV / Parquet"
+    family = "file_import"
     supports_files = True
+    supported_intervals = ["any"]
+    asset_classes = ["stocks", "crypto", "forex", "futures", "options", "custom"]
+    notes = "Best generic path for long research histories. Reads VPS-local CSV/Parquet directly."
 
     def fetch(self, request: DatasetRequest) -> DatasetResponse:
         if not request.file_path:

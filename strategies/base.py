@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable
 
 import pandas as pd
@@ -21,6 +21,10 @@ class StrategySpec:
     # For bracket strategies: base bars are resampled positionally by this
     # factor before the engine runs (e.g. 16 = 15m -> 4h). 1 = no resample.
     resample_per: int = 1
+    long_short: bool = True
+    needs_ohlc: bool = True
+    needs_volume: bool = False
+    tags: list[str] = field(default_factory=list)
 
 
 def clamp_position(raw: pd.Series, index: pd.Index) -> pd.Series:

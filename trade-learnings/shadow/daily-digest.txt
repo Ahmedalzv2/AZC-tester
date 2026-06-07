@@ -1,0 +1,7 @@
+AZC daily curate
+[fetch] DONE kept=414 dropped=360 -> /root/apps/backtest-lab/data_cache/mexc
+[roll:crypto-xsec] not due (5.0d < 7d since last book) — no roll
+[roll:equity-12-1] ['K']: possibly delisted; no price data found  (period=2y) (Yahoo error = "No data found, symbol may be delisted")
+[curate] crypto-xsec forward periods=0 t=+0.00 -> accumulating
+[curate] equity-12-1 forward months=0 t=+0.00
+[prune] removed 415 regenerable files (universe cache + temp results)

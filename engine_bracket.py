@@ -31,12 +31,29 @@ class Bar:
 
 
 def to_bars(df) -> list[Bar]:
-    """OHLCV DataFrame (DatetimeIndex) -> AZC bar list. Timestamp is epoch ms."""
-    bars: list[Bar] = []
-    for idx, row in df.iterrows():
-        ts = int(idx.value // 1_000_000)  # ns -> ms
-        bars.append(Bar(ts, float(row["Open"]), float(row["High"]), float(row["Low"]), float(row["Close"])))
-    return bars
+    """OHLCV DataFrame (DatetimeIndex) -> AZC bar list. Timestamp is epoch ms.
+
+    Vectorized: pulls the four columns + index as numpy arrays once, then builds
+    the Bar list in a tight comprehension. The old df.iterrows() path built a
+    Series per row and dominated sweep wall-clock (it ran for every grid combo).
+    """
+    # Some providers (yfinance MultiIndex flattening) emit duplicate column
+    # labels, which makes row["Open"] return a Series. Keep first of each.
+    if getattr(df.columns, "duplicated", None) is not None and df.columns.duplicated().any():
+        df = df.loc[:, ~df.columns.duplicated()]
+    o = df["Open"].to_numpy(dtype=float)
+    h = df["High"].to_numpy(dtype=float)
+    l = df["Low"].to_numpy(dtype=float)
+    c = df["Close"].to_numpy(dtype=float)
+    # Cast the datetime index straight to epoch-ms. Casting to datetime64[ms]
+    # first normalizes ANY source resolution (ns/us/ms/s) — `asi8` alone returns
+    # the index's own unit, so it is NOT always ns (pandas 2.x keeps ms/us). For
+    # a tz-aware index .values is UTC-naive datetime64, matching the old idx.value.
+    ts = df.index.values.astype("datetime64[ms]").astype("int64")
+    return [
+        Bar(int(ts[k]), float(o[k]), float(h[k]), float(l[k]), float(c[k]))
+        for k in range(len(c))
+    ]
 
 
 def resample_positional(bars: list[Bar], per: int) -> list[Bar]:
@@ -221,7 +238,22 @@ def _infer_4h_per(bars: list[Bar]) -> int:
     return max(1, round(_FOUR_H_MS / median))
 
 
-def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
+def prepare_bracket_bars(df, resample_per=None) -> list[Bar]:
+    """OHLCV DataFrame -> 4h-aggregated bar list, the params-invariant prep step.
+
+    The bars depend only on the data and its spacing, NOT on the strategy params,
+    so a sweep can build them ONCE and reuse across every grid combo instead of
+    re-running to_bars + resample for each. Pass the result to
+    run_bracket_backtest(bars=...) to skip the transform.
+    """
+    bars = to_bars(df)
+    per = resample_per if (resample_per and resample_per > 1) else _infer_4h_per(bars)
+    if per > 1:
+        bars = resample_positional(bars, per)
+    return bars
+
+
+def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None, bars=None):
     """Frontend-shaped result for an AZC bracket strategy.
 
     R-native truth (netR/trade, totalR) drives a compounded cash curve at
@@ -230,11 +262,11 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
 
     The base series is aggregated to 4h positionally (matching AZC) — the factor
     is auto-detected from the data's bar spacing unless `resample_per` forces it.
+    Pass pre-built `bars` (from prepare_bracket_bars) to skip the transform; in
+    that case `df` is ignored.
     """
-    bars = to_bars(df)
-    per = resample_per if (resample_per and resample_per > 1) else _infer_4h_per(bars)
-    if per > 1:
-        bars = resample_positional(bars, per)
+    if bars is None:
+        bars = prepare_bracket_bars(df, resample_per)
     if len(bars) < int(params.get("don", 30)) + 2:
         raise ValueError("Not enough bars for the chosen Donchian lookback")
 
@@ -277,13 +309,24 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
 
     # Annualized Sharpe on the per-trade netR series (cash-equivalent).
     net_rs = [t["netR"] * risk_pct for t in trades]
-    sharpe = 0.0
+    sharpe = sortino = 0.0
     if len(net_rs) > 1:
         mean = sum(net_rs) / len(net_rs)
         var = sum((x - mean) ** 2 for x in net_rs) / len(net_rs)
         sd = var ** 0.5
+        ann = (len(net_rs) / years) ** 0.5 if years > 0 else 0.0
         if sd > 0 and years > 0:
-            sharpe = (mean / sd) * (len(net_rs) / years) ** 0.5
+            sharpe = (mean / sd) * ann
+        # Sortino: downside-only deviation of per-trade returns vs a 0 target.
+        downside = [x for x in net_rs if x < 0]
+        dd = (sum(x * x for x in downside) / len(net_rs)) ** 0.5 if downside else 0.0
+        if dd > 0 and years > 0:
+            sortino = (mean / dd) * ann
+
+    # Profit factor on R terms: total winning R / total |losing R|.
+    gross_win_r = sum(t["netR"] for t in trades if t["netR"] > 0)
+    gross_loss_r = -sum(t["netR"] for t in trades if t["netR"] < 0)
+    profit_factor = (gross_win_r / gross_loss_r) if gross_loss_r > 0 else (float("inf") if gross_win_r > 0 else 0.0)
 
     maker_entry = bool(params.get("makerEntry", True))
     maker_tp = bool(params.get("makerTp", True))
@@ -301,6 +344,8 @@ def run_bracket_backtest(df, params, initial_cash, interval, resample_per=None):
         "annualized_return_pct": round(annualized * 100, 3),
         "max_drawdown_pct": round(max_dd * 100, 3),
         "sharpe": round(sharpe, 3),
+        "sortino": round(sortino, 3),
+        "profit_factor": round(profit_factor, 3) if profit_factor != float("inf") else None,
         "trade_count": m["n"],
         "win_rate_pct": round(m["winPct"], 3),
         "exposure_pct": round(sum(1 for d in open_dir if d != 0) / max(len(bars), 1) * 100, 3),
@@ -343,14 +388,21 @@ def _bracket_significance(net_rs: list[float]) -> dict[str, Any]:
 
     from stats import _default_lags, bootstrap_pvalue, newey_west_tstat
 
+    from overfit import sharpe_moments
+
     arr = np.asarray(net_rs, dtype=float)
     n = int(arr.size)
     if n < 2:
         return {"n": n, "mean_return": 0.0, "tstat": 0.0, "pvalue": 1.0, "lags": 0,
-                "significant": False, "basis": "per-trade netR"}
+                "significant": False, "basis": "per-trade netR",
+                "sharpe": 0.0, "skew": 0.0, "kurt": 3.0}
     lags = _default_lags(n)
     t = newey_west_tstat(arr, lags=lags)
     p = bootstrap_pvalue(arr)
+    # Per-trade Sharpe + sample moments feed the sweep's Deflated Sharpe Ratio
+    # (multiple-testing correction). Basis is per-trade netR — the same series
+    # the t-stat is measured on, not the diluted equity curve.
+    mom = sharpe_moments(net_rs)
     return {
         "n": n,
         "mean_return": round(float(arr.mean()), 6),  # mean netR per trade
@@ -359,6 +411,9 @@ def _bracket_significance(net_rs: list[float]) -> dict[str, Any]:
         "lags": int(lags),
         "significant": bool(abs(t) >= 2.0 and p < 0.05),
         "basis": "per-trade netR",
+        "sharpe": round(mom["sharpe"], 6),
+        "skew": round(mom["skew"], 6),
+        "kurt": round(mom["kurt"], 6),
     }
 
 

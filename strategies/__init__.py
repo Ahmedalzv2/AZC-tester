@@ -15,15 +15,20 @@ STRATEGIES: dict[str, StrategySpec] = {
 }
 
 
-def list_strategies() -> dict[str, dict[str, object]]:
+def list_strategies(include_custom: bool = True) -> dict[str, dict[str, object]]:
     return {
         name: {
             "label": spec.label,
             "params": spec.params,
             "uses_custom_code": spec.uses_custom_code,
             "execution": getattr(spec, "execution", "position"),
+            "long_short": getattr(spec, "long_short", True),
+            "needs_ohlc": getattr(spec, "needs_ohlc", True),
+            "needs_volume": getattr(spec, "needs_volume", False),
+            "tags": getattr(spec, "tags", []),
         }
         for name, spec in STRATEGIES.items()
+        if include_custom or not spec.uses_custom_code
     }
 
 

@@ -10,9 +10,9 @@ import yfinance as yf
 from providers.base import CACHE_DIR, BaseDataProvider, DatasetRequest, DatasetResponse
 
 INTERVAL_LIMITS = {
-    "1d": {"period": "5y", "max_days": 365 * 5 + 10},
-    "1wk": {"period": "5y", "max_days": 365 * 5 + 10},
-    "1mo": {"period": "5y", "max_days": 365 * 5 + 10},
+    "1d": {"period": "max", "max_days": 365 * 100},
+    "1wk": {"period": "max", "max_days": 365 * 100},
+    "1mo": {"period": "max", "max_days": 365 * 100},
     "1h": {"period": "730d", "max_days": 730},
     "15m": {"period": "60d", "max_days": 60},
     "5m": {"period": "60d", "max_days": 60},
@@ -22,6 +22,11 @@ INTERVAL_LIMITS = {
 class YahooFinanceProvider(BaseDataProvider):
     name = "yahoo"
     label = "Yahoo Finance"
+    family = "remote_api"
+    supports_remote = True
+    supported_intervals = list(INTERVAL_LIMITS.keys())
+    asset_classes = ["stocks", "etf", "index", "fx", "crypto"]
+    notes = "Daily bars are fine. Intraday depth is capped by Yahoo retention and trimmed honestly."
 
     def _cache_path(self, symbol: str, interval: str) -> Path:
         return CACHE_DIR / f"{self.safe_file_name(symbol)}_{interval}_{self.name}.csv"
