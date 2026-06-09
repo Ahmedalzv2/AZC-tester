@@ -119,9 +119,44 @@ def bollinger_fade(bars, i, p):
     return {"long": "short", "short": "long"}.get(d)
 
 
+def break_retest(bars, i, p):  # continuation: breakout -> pullback -> reclaim
+    # Mechanises the video's "break and retest with a rejection candle". A recent
+    # bar must have closed beyond an L-bar level; bar i then taps back into that
+    # level (within brTolAtr * ATR) and closes back through it in the breakout
+    # direction. Only the freshest breakout in the brW window is considered, so a
+    # failed retest doesn't keep firing on stale levels.
+    L = int(p.get("brL", 20))
+    W = int(p.get("brW", 6))
+    tol = float(p.get("brTolAtr", 0.5))
+    atr_n = int(p.get("atrN", 14))
+    if i - (L + W) < 0:
+        return None
+    a = atr(bars, i, atr_n)
+    if a <= 0:
+        return None
+    cur = bars[i]
+    band = tol * a
+    for b in range(i - 1, i - 1 - W, -1):  # most-recent breakout wins
+        level = max(x.h for x in bars[b - L:b])
+        if bars[b].c > level:
+            if (cur.c > cur.o and cur.c > level
+                    and level - band <= cur.l <= level + band):
+                return "long"
+            break
+    for b in range(i - 1, i - 1 - W, -1):
+        level = min(x.l for x in bars[b - L:b])
+        if bars[b].c < level:
+            if (cur.c < cur.o and cur.c < level
+                    and level - band <= cur.h <= level + band):
+                return "short"
+            break
+    return None
+
+
 SIGNALS: dict[str, EntryFn] = {
     "donchian_break": donchian_break,
     "donchian_fade": donchian_fade,
+    "break_retest": break_retest,
     "ts_momentum": ts_momentum,
     "ma_cross": ma_cross,
     "rsi_reversion": rsi_reversion,

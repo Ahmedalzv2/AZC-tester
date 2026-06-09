@@ -1,0 +1,450 @@
+{
+  "family": "break_retest",
+  "fees": "all-taker 0.075%/leg (engine_bracket TAKER)",
+  "grid_size": 16,
+  "method": "IS-select per asset, OOS-judge once, Bonferroni across basket",
+  "n_assets_judged": 20,
+  "bonferroni_alpha": 0.0025,
+  "critical_t": 2.81,
+  "n_survivors": 0,
+  "survivors": [],
+  "fundable": false,
+  "per_asset": [
+    {
+      "asset": "EOS",
+      "cfg": {
+        "brL": 25,
+        "brW": 6,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 0.45,
+      "oos_n": 30,
+      "oos_meanR": 0.378,
+      "oos_t": 1.53,
+      "oos_p": 0.0935,
+      "verdict": "noise"
+    },
+    {
+      "asset": "ARB",
+      "cfg": {
+        "brL": 15,
+        "brW": 3,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 2.19,
+      "oos_n": 51,
+      "oos_meanR": 0.3118,
+      "oos_t": 1.31,
+      "oos_p": 0.1399,
+      "verdict": "marginal"
+    },
+    {
+      "asset": "DOGE",
+      "cfg": {
+        "brL": 25,
+        "brW": 6,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.6,
+      "oos_n": 70,
+      "oos_meanR": 0.1123,
+      "oos_t": 0.63,
+      "oos_p": 0.2654,
+      "verdict": "noise"
+    },
+    {
+      "asset": "RUNE",
+      "cfg": {
+        "brL": 25,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.76,
+      "oos_n": 47,
+      "oos_meanR": 0.1861,
+      "oos_t": 0.58,
+      "oos_p": 0.2529,
+      "verdict": "noise"
+    },
+    {
+      "asset": "ETH",
+      "cfg": {
+        "brL": 25,
+        "brW": 6,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.53,
+      "oos_n": 47,
+      "oos_meanR": 0.1198,
+      "oos_t": 0.52,
+      "oos_p": 0.2909,
+      "verdict": "noise"
+    },
+    {
+      "asset": "AAVE",
+      "cfg": {
+        "brL": 15,
+        "brW": 6,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 0.81,
+      "oos_n": 55,
+      "oos_meanR": 0.1295,
+      "oos_t": 0.45,
+      "oos_p": 0.3063,
+      "verdict": "noise"
+    },
+    {
+      "asset": "NEAR",
+      "cfg": {
+        "brL": 25,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.42,
+      "oos_n": 46,
+      "oos_meanR": 0.0667,
+      "oos_t": 0.38,
+      "oos_p": 0.3463,
+      "verdict": "noise"
+    },
+    {
+      "asset": "ICP",
+      "cfg": {
+        "brL": 15,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 1.08,
+      "oos_n": 44,
+      "oos_meanR": 0.0654,
+      "oos_t": 0.31,
+      "oos_p": 0.4188,
+      "verdict": "noise"
+    },
+    {
+      "asset": "XRP",
+      "cfg": {
+        "brL": 25,
+        "brW": 6,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.4,
+      "oos_n": 77,
+      "oos_meanR": 0.0672,
+      "oos_t": 0.28,
+      "oos_p": 0.3813,
+      "verdict": "noise"
+    },
+    {
+      "asset": "DOT",
+      "cfg": {
+        "brL": 15,
+        "brW": 6,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 0.67,
+      "oos_n": 52,
+      "oos_meanR": 0.0432,
+      "oos_t": 0.21,
+      "oos_p": 0.4113,
+      "verdict": "noise"
+    },
+    {
+      "asset": "SOL",
+      "cfg": {
+        "brL": 15,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 2.64,
+      "oos_n": 97,
+      "oos_meanR": 0.0183,
+      "oos_t": 0.13,
+      "oos_p": 0.4413,
+      "verdict": "noise"
+    },
+    {
+      "asset": "ADA",
+      "cfg": {
+        "brL": 25,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 1.2,
+      "oos_n": 78,
+      "oos_meanR": 0.0079,
+      "oos_t": 0.05,
+      "oos_p": 0.4688,
+      "verdict": "noise"
+    },
+    {
+      "asset": "ALGO",
+      "cfg": {
+        "brL": 15,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.47,
+      "oos_n": 63,
+      "oos_meanR": -0.0171,
+      "oos_t": -0.1,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "APT",
+      "cfg": {
+        "brL": 25,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 0.7,
+      "oos_n": 39,
+      "oos_meanR": -0.0277,
+      "oos_t": -0.14,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "BTC",
+      "cfg": {
+        "brL": 15,
+        "brW": 3,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.83,
+      "oos_n": 50,
+      "oos_meanR": -0.0475,
+      "oos_t": -0.22,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "UNI",
+      "cfg": {
+        "brL": 25,
+        "brW": 3,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 0.58,
+      "oos_n": 35,
+      "oos_meanR": -0.1219,
+      "oos_t": -0.31,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "TRX",
+      "cfg": {
+        "brL": 25,
+        "brW": 6,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 2.47,
+      "oos_n": 64,
+      "oos_meanR": -0.0773,
+      "oos_t": -0.44,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "AVAX",
+      "cfg": {
+        "brL": 25,
+        "brW": 6,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 1.78,
+      "oos_n": 38,
+      "oos_meanR": -0.1649,
+      "oos_t": -0.77,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "LTC",
+      "cfg": {
+        "brL": 25,
+        "brW": 3,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 0.31,
+      "oos_n": 63,
+      "oos_meanR": -0.1332,
+      "oos_t": -0.86,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "SUI",
+      "cfg": {
+        "brL": 15,
+        "brW": 6,
+        "brTolAtr": 0.5,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 1.32,
+      "oos_n": 48,
+      "oos_meanR": -0.2165,
+      "oos_t": -0.93,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "ETC",
+      "cfg": {
+        "brL": 25,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 2.0,
+        "trail": 0
+      },
+      "is_t": 0.61,
+      "oos_n": 42,
+      "oos_meanR": -0.2507,
+      "oos_t": -1.17,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "BCH",
+      "cfg": {
+        "brL": 25,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.07,
+      "oos_n": 43,
+      "oos_meanR": -0.3187,
+      "oos_t": -1.51,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "LINK",
+      "cfg": {
+        "brL": 15,
+        "brW": 6,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 0.41,
+      "oos_n": 69,
+      "oos_meanR": -0.2656,
+      "oos_t": -1.76,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "BNB",
+      "cfg": {
+        "brL": 15,
+        "brW": 3,
+        "brTolAtr": 1.0,
+        "atrMult": 2.0,
+        "atrN": 14,
+        "rr": 99,
+        "trail": 3.0
+      },
+      "is_t": 1.81,
+      "oos_n": 68,
+      "oos_meanR": -0.2653,
+      "oos_t": -1.79,
+      "oos_p": 1.0,
+      "verdict": "noise"
+    },
+    {
+      "asset": "ATOM",
+      "skipped": "no positive-edge IS config"
+    }
+  ]
+}
