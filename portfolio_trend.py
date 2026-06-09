@@ -23,6 +23,24 @@ import pandas as pd
 
 DEFAULT_UNIVERSE = ["SPY", "QQQ", "IWM", "EFA", "EEM", "GLD", "SLV", "DBC", "USO", "TLT"]
 
+# Broadened managed-futures market set (pre-registered, 2026-06-09). Adding
+# uncorrelated markets is the documented way to lift a trend portfolio's Sharpe
+# (breadth, not knob-tuning). Beat the 10-ETF baseline on every axis and across
+# OOS splits: OOS Sharpe 0.68->0.80, OOS t 2.17->2.69 (3.21 @40% split), maxDD
+# -24%->-19%, DSR 0.889->0.922 (still <0.95 — better forward candidate, not yet
+# fundable; fund on forward t>2). See research/broaden_proven_universe.py.
+BROAD_UNIVERSE = [
+    "SPY", "QQQ", "IWM", "EFA", "EEM", "EWJ", "VGK",       # equities by region
+    "TLT", "IEF", "SHY",                                     # rates
+    "GLD", "SLV", "DBC", "USO", "UNG", "DBA", "CPER",        # commodities (all sectors)
+    "HYG", "LQD",                                            # credit
+    "UUP", "FXE", "FXY",                                     # FX / USD
+    "VNQ",                                                   # real assets
+]
+# The forward candidate config the OOS+deflated search selected on BROAD_UNIVERSE
+# (don200/trail5/vt0.10 — longer lookback than the old don100 prod).
+FORWARD_PARAMS = {"don": 200, "trail": 5, "vol_target": 0.10, "vol_lookback": 60}
+
 
 def donchian_trail_position(close, high, low, don=100, atr_n=14, atr_mult=2, trail=5) -> pd.Series:
     """Daily {-1,0,+1} position from Donchian breakout + chandelier trail —

@@ -20,13 +20,16 @@ NAV_LOG = Path(__file__).resolve().parent / "alpaca-nav.jsonl"
 
 def _fetch_targets() -> dict[str, float]:
     import yfinance as yf
-    from portfolio_trend import DEFAULT_UNIVERSE, current_targets
+    from portfolio_trend import BROAD_UNIVERSE, FORWARD_PARAMS, current_targets
+    # Forward-test the better candidate (2026-06-09): broad 23-market universe +
+    # the OOS-selected don200/vt0.10 config. Beats the old 10-ETF/don100 prod on
+    # OOS Sharpe, t, and drawdown. See portfolio_trend.BROAD_UNIVERSE.
     ohlc = {}
-    for s in DEFAULT_UNIVERSE:
+    for s in BROAD_UNIVERSE:
         df = yf.Ticker(s).history(period="max", interval="1d")
         if len(df) > 260:
             ohlc[s] = df[["Open", "High", "Low", "Close"]]
-    return current_targets(ohlc)
+    return current_targets(ohlc, **FORWARD_PARAMS)
 
 
 def run(dry_run: bool = True, batch_date: str = "") -> dict:
