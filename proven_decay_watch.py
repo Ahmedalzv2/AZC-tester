@@ -50,13 +50,14 @@ def main() -> None:
         if "--force" not in sys.argv and not _due():
             print("proven-decay: not due (<28d since last run)")
             return
-        from proven_portfolio_search import load_universe, run_search, PROD
-        # Use the SAME full grid as the search — DSR deflates by trial count, so a
-        # smaller grid would inflate it and read as "newly significant". Keeping
-        # the grid fixed makes prod/best OOS t AND DSR comparable month-over-month.
+        from proven_portfolio_search import load_universe, run_search
+        from portfolio_trend import BROAD_UNIVERSE, FORWARD_PARAMS
+        # Monitor the CURRENT forward candidate (broad-23 / don200, what the Alpaca
+        # lane now runs), not the deprecated 10-ETF prod. Same full grid each month
+        # so DSR stays comparable (a smaller grid would inflate it).
         grid = {"don": [50, 75, 100, 150, 200], "trail": [3, 5, 7],
                 "vol_target": [0.10, 0.15, 0.20], "vol_lookback": [60]}
-        rep = run_search(load_universe(), grid, prod=PROD)
+        rep = run_search(load_universe(BROAD_UNIVERSE), grid, prod=FORWARD_PARAMS)
         v = decay_verdict(rep)
         v["date"] = dt.date.today().isoformat()
         v["n_configs"] = rep["n_configs"]
