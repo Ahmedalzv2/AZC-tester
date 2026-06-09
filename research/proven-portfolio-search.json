@@ -1,0 +1,1160 @@
+{
+  "universe": [
+    "SPY",
+    "QQQ",
+    "IWM",
+    "EFA",
+    "EEM",
+    "GLD",
+    "SLV",
+    "DBC",
+    "USO",
+    "TLT"
+  ],
+  "n_configs": 45,
+  "oos_frac": 0.3,
+  "best_by_oos": {
+    "genome": {
+      "don": 200,
+      "trail": 7,
+      "vol_target": 0.1,
+      "vol_lookback": 60
+    },
+    "full": {
+      "sharpe_ann": 0.565,
+      "hac_t": 3.453,
+      "n": 8396
+    },
+    "oos": {
+      "sharpe_ann": 0.68,
+      "hac_t": 2.169,
+      "n": 2519
+    },
+    "per_obs_sharpe": 0.04283527266954392,
+    "skew": -0.2719528609169381,
+    "kurt": 6.296627577593723,
+    "cagr_pct": 5.83,
+    "max_dd_pct": -24.1,
+    "oos_rank": 1
+  },
+  "prod": {
+    "genome": {
+      "don": 100,
+      "trail": 5,
+      "vol_target": 0.15,
+      "vol_lookback": 60
+    },
+    "full": {
+      "sharpe_ann": 0.564,
+      "hac_t": 3.504,
+      "n": 8396
+    },
+    "oos": {
+      "sharpe_ann": 0.581,
+      "hac_t": 1.931,
+      "n": 2519
+    },
+    "per_obs_sharpe": 0.036612021657199616,
+    "skew": -0.6042184919573486,
+    "kurt": 8.506457086140342,
+    "cagr_pct": 8.39,
+    "max_dd_pct": -38.8,
+    "oos_rank": 23
+  },
+  "deflated": {
+    "dsr": 0.8894403194130522,
+    "psr_vs_zero": 0.9835985374543585,
+    "sr_star": 0.018280708775547733,
+    "n_trials": 45,
+    "trials_var": 6.686244412784888e-05
+  },
+  "plateau_of_best": {
+    "neighbor_count": 3,
+    "neighbor_oos_sharpe_mean": 0.653,
+    "neighbors_positive_share": 1.0
+  },
+  "improvement_oos_sharpe_vs_prod": 0.099,
+  "verdict": "no-improvement",
+  "ranked": [
+    {
+      "genome": {
+        "don": 200,
+        "trail": 7,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.565,
+        "hac_t": 3.453,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.68,
+        "hac_t": 2.169,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.04283527266954392,
+      "skew": -0.2719528609169381,
+      "kurt": 6.296627577593723,
+      "cagr_pct": 5.83,
+      "max_dd_pct": -24.1,
+      "oos_rank": 1
+    },
+    {
+      "genome": {
+        "don": 200,
+        "trail": 7,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.568,
+        "hac_t": 3.471,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.68,
+        "hac_t": 2.169,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.04283527266954388,
+      "skew": -0.27195286091693816,
+      "kurt": 6.296627577593726,
+      "cagr_pct": 8.41,
+      "max_dd_pct": -34.3,
+      "oos_rank": 2
+    },
+    {
+      "genome": {
+        "don": 200,
+        "trail": 7,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.574,
+        "hac_t": 3.51,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.68,
+        "hac_t": 2.169,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.04283527266954392,
+      "skew": -0.2719528609169381,
+      "kurt": 6.296627577593723,
+      "cagr_pct": 10.79,
+      "max_dd_pct": -43.3,
+      "oos_rank": 3
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 3,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.545,
+        "hac_t": 3.273,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.663,
+        "hac_t": 2.108,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.04177845808592839,
+      "skew": -0.2663308871324204,
+      "kurt": 8.484882772877715,
+      "cagr_pct": 8.26,
+      "max_dd_pct": -28.6,
+      "oos_rank": 4
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 3,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.556,
+        "hac_t": 3.323,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.662,
+        "hac_t": 2.106,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.04172826519896516,
+      "skew": -0.2660795461003206,
+      "kurt": 8.484467606791695,
+      "cagr_pct": 5.91,
+      "max_dd_pct": -19.3,
+      "oos_rank": 5
+    },
+    {
+      "genome": {
+        "don": 200,
+        "trail": 3,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.467,
+        "hac_t": 2.863,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.662,
+        "hac_t": 2.11,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.041688834720333204,
+      "skew": -0.31207515761274873,
+      "kurt": 8.291261160785883,
+      "cagr_pct": 4.85,
+      "max_dd_pct": -28.0,
+      "oos_rank": 6
+    },
+    {
+      "genome": {
+        "don": 200,
+        "trail": 3,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.47,
+        "hac_t": 2.884,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.662,
+        "hac_t": 2.112,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.04172875494531316,
+      "skew": -0.31220087022613197,
+      "kurt": 8.292094510129138,
+      "cagr_pct": 6.87,
+      "max_dd_pct": -40.9,
+      "oos_rank": 7
+    },
+    {
+      "genome": {
+        "don": 200,
+        "trail": 3,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.483,
+        "hac_t": 2.97,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.661,
+        "hac_t": 2.11,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.041654444609923624,
+      "skew": -0.30865535515946024,
+      "kurt": 8.31280328434125,
+      "cagr_pct": 8.84,
+      "max_dd_pct": -51.7,
+      "oos_rank": 8
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 3,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.564,
+        "hac_t": 3.373,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.657,
+        "hac_t": 2.09,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.04138760429341082,
+      "skew": -0.26714143307099497,
+      "kurt": 8.493966884783763,
+      "cagr_pct": 10.88,
+      "max_dd_pct": -37.4,
+      "oos_rank": 9
+    },
+    {
+      "genome": {
+        "don": 200,
+        "trail": 5,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.563,
+        "hac_t": 3.501,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.648,
+        "hac_t": 2.139,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.040817666121465715,
+      "skew": -0.5943259342384439,
+      "kurt": 8.602711423555288,
+      "cagr_pct": 5.86,
+      "max_dd_pct": -23.5,
+      "oos_rank": 10
+    },
+    {
+      "genome": {
+        "don": 200,
+        "trail": 5,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.565,
+        "hac_t": 3.514,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.648,
+        "hac_t": 2.139,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.040817666121465986,
+      "skew": -0.5943259342384491,
+      "kurt": 8.60271142355523,
+      "cagr_pct": 8.43,
+      "max_dd_pct": -34.1,
+      "oos_rank": 11
+    },
+    {
+      "genome": {
+        "don": 200,
+        "trail": 5,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.572,
+        "hac_t": 3.565,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.648,
+        "hac_t": 2.142,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.040819160554110744,
+      "skew": -0.5889810061057508,
+      "kurt": 8.619296629458168,
+      "cagr_pct": 10.83,
+      "max_dd_pct": -43.8,
+      "oos_rank": 12
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 7,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.583,
+        "hac_t": 3.586,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.632,
+        "hac_t": 2.06,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03983427897511356,
+      "skew": -0.4031396886938676,
+      "kurt": 7.576281248661312,
+      "cagr_pct": 6.0,
+      "max_dd_pct": -22.9,
+      "oos_rank": 13
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 7,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.585,
+        "hac_t": 3.599,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.632,
+        "hac_t": 2.06,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.0398342789751136,
+      "skew": -0.4031396886938669,
+      "kurt": 7.576281248661312,
+      "cagr_pct": 8.67,
+      "max_dd_pct": -33.5,
+      "oos_rank": 14
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 7,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.588,
+        "hac_t": 3.611,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.632,
+        "hac_t": 2.06,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03983427897511356,
+      "skew": -0.40313968869386696,
+      "kurt": 7.576281248661313,
+      "cagr_pct": 11.09,
+      "max_dd_pct": -43.3,
+      "oos_rank": 15
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 5,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.59,
+        "hac_t": 3.674,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.596,
+        "hac_t": 2.048,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03755508036465859,
+      "skew": -0.5714600829907572,
+      "kurt": 8.577554100099333,
+      "cagr_pct": 6.24,
+      "max_dd_pct": -26.9,
+      "oos_rank": 16
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 5,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.592,
+        "hac_t": 3.686,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.596,
+        "hac_t": 2.048,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03755508036465857,
+      "skew": -0.5714600829907571,
+      "kurt": 8.577554100099327,
+      "cagr_pct": 9.0,
+      "max_dd_pct": -38.2,
+      "oos_rank": 17
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 5,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.586,
+        "hac_t": 3.659,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.596,
+        "hac_t": 2.048,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03756262954551831,
+      "skew": -0.5714718299687566,
+      "kurt": 8.577298018125827,
+      "cagr_pct": 11.3,
+      "max_dd_pct": -48.2,
+      "oos_rank": 18
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 7,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.678,
+        "hac_t": 4.158,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.582,
+        "hac_t": 1.961,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.036677060959807384,
+      "skew": -0.4101675695674676,
+      "kurt": 8.041026142178863,
+      "cagr_pct": 7.31,
+      "max_dd_pct": -24.0,
+      "oos_rank": 19
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 7,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.679,
+        "hac_t": 4.164,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.582,
+        "hac_t": 1.961,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03667706095980742,
+      "skew": -0.4101675695674679,
+      "kurt": 8.041026142178863,
+      "cagr_pct": 10.64,
+      "max_dd_pct": -34.9,
+      "oos_rank": 20
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 7,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.673,
+        "hac_t": 4.135,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.582,
+        "hac_t": 1.961,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.036677060959807384,
+      "skew": -0.4101675695674676,
+      "kurt": 8.041026142178863,
+      "cagr_pct": 13.53,
+      "max_dd_pct": -44.9,
+      "oos_rank": 21
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 5,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.562,
+        "hac_t": 3.494,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.581,
+        "hac_t": 1.931,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03661202165719962,
+      "skew": -0.6042184919573498,
+      "kurt": 8.506457086140346,
+      "cagr_pct": 5.83,
+      "max_dd_pct": -27.2,
+      "oos_rank": 22
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 5,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.564,
+        "hac_t": 3.504,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.581,
+        "hac_t": 1.931,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.036612021657199616,
+      "skew": -0.6042184919573486,
+      "kurt": 8.506457086140342,
+      "cagr_pct": 8.39,
+      "max_dd_pct": -38.8,
+      "oos_rank": 23
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 5,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.561,
+        "hac_t": 3.483,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.581,
+        "hac_t": 1.929,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03657499694504819,
+      "skew": -0.6035370858184914,
+      "kurt": 8.507039839071016,
+      "cagr_pct": 10.55,
+      "max_dd_pct": -49.2,
+      "oos_rank": 24
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 7,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.642,
+        "hac_t": 3.946,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.579,
+        "hac_t": 1.902,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03650171329966359,
+      "skew": -0.369296011980981,
+      "kurt": 6.903438944745276,
+      "cagr_pct": 6.75,
+      "max_dd_pct": -21.8,
+      "oos_rank": 25
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 7,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.642,
+        "hac_t": 3.95,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.579,
+        "hac_t": 1.902,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03650171329966359,
+      "skew": -0.36929601198098,
+      "kurt": 6.903438944745271,
+      "cagr_pct": 9.8,
+      "max_dd_pct": -32.0,
+      "oos_rank": 26
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 7,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.638,
+        "hac_t": 3.921,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.579,
+        "hac_t": 1.902,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03650171329966359,
+      "skew": -0.369296011980981,
+      "kurt": 6.903438944745276,
+      "cagr_pct": 12.44,
+      "max_dd_pct": -41.7,
+      "oos_rank": 27
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 5,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.651,
+        "hac_t": 3.95,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.54,
+        "hac_t": 1.815,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03402319617083013,
+      "skew": -0.6616530055566516,
+      "kurt": 12.35329954588107,
+      "cagr_pct": 6.86,
+      "max_dd_pct": -27.8,
+      "oos_rank": 28
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 5,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.653,
+        "hac_t": 3.96,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.54,
+        "hac_t": 1.815,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.034023196170830106,
+      "skew": -0.6616530055566571,
+      "kurt": 12.353299545881121,
+      "cagr_pct": 9.98,
+      "max_dd_pct": -39.8,
+      "oos_rank": 29
+    },
+    {
+      "genome": {
+        "don": 150,
+        "trail": 5,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.656,
+        "hac_t": 3.977,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.54,
+        "hac_t": 1.815,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.034023196170830154,
+      "skew": -0.6616530055566512,
+      "kurt": 12.353299545881063,
+      "cagr_pct": 12.88,
+      "max_dd_pct": -50.4,
+      "oos_rank": 30
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 3,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.499,
+        "hac_t": 2.991,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.535,
+        "hac_t": 1.728,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03370525357965251,
+      "skew": -0.30362524396552876,
+      "kurt": 7.825061043139021,
+      "cagr_pct": 9.41,
+      "max_dd_pct": -43.3,
+      "oos_rank": 31
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 3,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.498,
+        "hac_t": 2.986,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.534,
+        "hac_t": 1.727,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.03366695634444676,
+      "skew": -0.30228217238604566,
+      "kurt": 7.812306393945964,
+      "cagr_pct": 7.53,
+      "max_dd_pct": -33.8,
+      "oos_rank": 32
+    },
+    {
+      "genome": {
+        "don": 100,
+        "trail": 3,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.495,
+        "hac_t": 2.971,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.532,
+        "hac_t": 1.72,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.033502557946311906,
+      "skew": -0.30283133886340463,
+      "kurt": 7.8141131626160165,
+      "cagr_pct": 5.29,
+      "max_dd_pct": -23.3,
+      "oos_rank": 33
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 7,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.575,
+        "hac_t": 3.614,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.452,
+        "hac_t": 1.508,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.028489078807604717,
+      "skew": -0.423047287341978,
+      "kurt": 8.06180771555276,
+      "cagr_pct": 5.98,
+      "max_dd_pct": -23.0,
+      "oos_rank": 34
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 7,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.576,
+        "hac_t": 3.621,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.452,
+        "hac_t": 1.508,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.02848907880760476,
+      "skew": -0.4230472873419743,
+      "kurt": 8.061807715552753,
+      "cagr_pct": 8.61,
+      "max_dd_pct": -33.8,
+      "oos_rank": 35
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 7,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.569,
+        "hac_t": 3.587,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.452,
+        "hac_t": 1.508,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.028489078807604692,
+      "skew": -0.42304728734197916,
+      "kurt": 8.061807715552757,
+      "cagr_pct": 10.76,
+      "max_dd_pct": -43.8,
+      "oos_rank": 36
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 3,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.469,
+        "hac_t": 2.841,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.42,
+        "hac_t": 1.407,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.026442776731316616,
+      "skew": -0.32963774910886356,
+      "kurt": 7.014138599741385,
+      "cagr_pct": 8.49,
+      "max_dd_pct": -42.7,
+      "oos_rank": 37
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 3,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.47,
+        "hac_t": 2.844,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.416,
+        "hac_t": 1.395,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.026175775319461952,
+      "skew": -0.3303152754764126,
+      "kurt": 7.013661633775453,
+      "cagr_pct": 6.87,
+      "max_dd_pct": -33.3,
+      "oos_rank": 38
+    },
+    {
+      "genome": {
+        "don": 75,
+        "trail": 3,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.468,
+        "hac_t": 2.829,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.413,
+        "hac_t": 1.388,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.02604481477249888,
+      "skew": -0.3310848135928001,
+      "kurt": 7.015359153332119,
+      "cagr_pct": 4.85,
+      "max_dd_pct": -23.0,
+      "oos_rank": 39
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 5,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.457,
+        "hac_t": 2.856,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.391,
+        "hac_t": 1.308,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.02462250924600163,
+      "skew": -0.4935036571528998,
+      "kurt": 7.990841260797488,
+      "cagr_pct": 4.6,
+      "max_dd_pct": -26.7,
+      "oos_rank": 40
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 5,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.459,
+        "hac_t": 2.868,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.391,
+        "hac_t": 1.308,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.02462250924600158,
+      "skew": -0.49350365715290134,
+      "kurt": 7.9908412607974775,
+      "cagr_pct": 6.51,
+      "max_dd_pct": -38.0,
+      "oos_rank": 41
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 5,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.454,
+        "hac_t": 2.839,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.391,
+        "hac_t": 1.308,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.024625822350720146,
+      "skew": -0.4935333261302982,
+      "kurt": 7.990566958315363,
+      "cagr_pct": 7.94,
+      "max_dd_pct": -47.9,
+      "oos_rank": 42
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 3,
+        "vol_target": 0.2,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.348,
+        "hac_t": 2.15,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.19,
+        "hac_t": 0.643,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.011961000520221416,
+      "skew": -0.2469427860886698,
+      "kurt": 6.2222166681662125,
+      "cagr_pct": 5.42,
+      "max_dd_pct": -47.4,
+      "oos_rank": 43
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 3,
+        "vol_target": 0.15,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.35,
+        "hac_t": 2.157,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.187,
+        "hac_t": 0.633,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.01175909931763582,
+      "skew": -0.24684959635531048,
+      "kurt": 6.223973491732554,
+      "cagr_pct": 4.57,
+      "max_dd_pct": -37.2,
+      "oos_rank": 44
+    },
+    {
+      "genome": {
+        "don": 50,
+        "trail": 3,
+        "vol_target": 0.1,
+        "vol_lookback": 60
+      },
+      "full": {
+        "sharpe_ann": 0.347,
+        "hac_t": 2.139,
+        "n": 8396
+      },
+      "oos": {
+        "sharpe_ann": 0.185,
+        "hac_t": 0.627,
+        "n": 2519
+      },
+      "per_obs_sharpe": 0.011643463623814175,
+      "skew": -0.24741549605058194,
+      "kurt": 6.226026999945988,
+      "cagr_pct": 3.32,
+      "max_dd_pct": -25.9,
+      "oos_rank": 45
+    }
+  ]
+}
