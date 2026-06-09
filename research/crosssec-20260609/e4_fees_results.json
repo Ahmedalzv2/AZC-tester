@@ -1,0 +1,55 @@
+{
+  "config": {
+    "lookback": 14,
+    "hold": 7,
+    "frac": 0.1,
+    "top_liquid": 100,
+    "loaded_assets": 100,
+    "periods": 283
+  },
+  "turnover": {
+    "mean_L1": 1.1462785349711142,
+    "frac_book_replaced": 0.5731392674855571
+  },
+  "gross": {
+    "mean_pct_wk": 4.9356401517745265,
+    "full_t": 2.894794457722014,
+    "oos_t": 0.6276840212791652
+  },
+  "fee_models": [
+    {
+      "fee_model": "taker_0.00075",
+      "per_leg": 0.00075,
+      "periods": 283,
+      "net_mean_pct_wk": 4.849669261651695,
+      "full_t": 2.843710551184428,
+      "oos_t": 0.5789891914642287,
+      "oos_net_mean_pct_wk": 0.9940084265766015,
+      "fee_pct_of_gross": 1.7418386972948465,
+      "net_pos_and_oos_t_pos": true
+    },
+    {
+      "fee_model": "double_taker_0.0015",
+      "per_leg": 0.0015,
+      "periods": 283,
+      "net_mean_pct_wk": 4.763698371528862,
+      "full_t": 2.7926477680299233,
+      "oos_t": 0.5303005696414285,
+      "oos_net_mean_pct_wk": 0.9104839167726798,
+      "fee_pct_of_gross": 3.483677394589763,
+      "net_pos_and_oos_t_pos": true
+    },
+    {
+      "fee_model": "maker_0.0002",
+      "per_leg": 0.0002,
+      "periods": 283,
+      "net_mean_pct_wk": 4.912714581075103,
+      "full_t": 2.8811700246551184,
+      "oos_t": 0.6146981347825529,
+      "oos_net_mean_pct_wk": 1.0552597337661445,
+      "fee_pct_of_gross": 0.4644903192786585,
+      "net_pos_and_oos_t_pos": true
+    }
+  ],
+  "verdict_taker_bankable": true
+}

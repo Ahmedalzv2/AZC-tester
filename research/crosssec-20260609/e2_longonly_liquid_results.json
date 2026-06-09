@@ -1,0 +1,31 @@
+{
+  "primary": "top100",
+  "configs_tested": 2,
+  "results": {
+    "top100": {
+      "label": "TOP100 long-only excess",
+      "periods": 283,
+      "mean_excess_pct": 3.382462618063213,
+      "sharpe_ann": 1.1978298324230567,
+      "full_hac_t": 2.8842268759361733,
+      "oos_hac_t": 1.8587236716727784,
+      "bootstrap_p": 0.005497251374312844,
+      "oos_periods": 85,
+      "hold": 7
+    },
+    "full": {
+      "label": "FULL universe long-only excess",
+      "periods": 283,
+      "mean_excess_pct": 1.229657102440435,
+      "sharpe_ann": 0.8016391296349965,
+      "full_hac_t": 1.7203011538350528,
+      "oos_hac_t": 1.1749491859911732,
+      "bootstrap_p": 0.03248375812093953,
+      "oos_periods": 85,
+      "hold": 7
+    }
+  },
+  "restrict_effect_oos_t": 0.6837744856816053,
+  "verdict": "marginal",
+  "fee_model": "taker 0.00075 on long rotation; benchmark costless EW"
+}

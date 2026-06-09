@@ -1,0 +1,133 @@
+{
+  "config": {
+    "lookback": 14,
+    "hold": 7,
+    "frac": 0.1,
+    "fee": 0.00075
+  },
+  "directions": {
+    "momentum": {
+      "rows": [
+        {
+          "year": 2021,
+          "n_rebalances": 53,
+          "edge_mean": 0.02405017995905958,
+          "edge_t": 1.3760854205924449,
+          "avg_dispersion": 0.35491966523565643
+        },
+        {
+          "year": 2022,
+          "n_rebalances": 52,
+          "edge_mean": 0.0008577495661191086,
+          "edge_t": 0.12186750022722065,
+          "avg_dispersion": 0.1710908298689286
+        },
+        {
+          "year": 2023,
+          "n_rebalances": 52,
+          "edge_mean": 0.0029852705269973,
+          "edge_t": 0.5382226044177445,
+          "avg_dispersion": 0.21030042822247746
+        },
+        {
+          "year": 2024,
+          "n_rebalances": 52,
+          "edge_mean": 0.004276978129241362,
+          "edge_t": 0.7383485801588494,
+          "avg_dispersion": 0.22509619170651696
+        },
+        {
+          "year": 2025,
+          "n_rebalances": 52,
+          "edge_mean": 0.00892453397857723,
+          "edge_t": 1.3399540430290309,
+          "avg_dispersion": 0.2513555283538494
+        },
+        {
+          "year": 2026,
+          "n_rebalances": 22,
+          "edge_mean": -0.010113483619211215,
+          "edge_t": -1.5374195230115086,
+          "avg_dispersion": 0.17687418593604468
+        }
+      ],
+      "full_t": 1.6043628399002439,
+      "full_mean": 0.006849747606558768,
+      "boot_p": 0.04247876061969016,
+      "oos_t": 0.6928912588338355,
+      "oos_mean": 0.003325209685536207,
+      "n": 283,
+      "corr_disp_edge": 0.93953056642869,
+      "corr_disp_absedge": 0.864971274915974
+    },
+    "long_only": {
+      "rows": [
+        {
+          "year": 2021,
+          "n_rebalances": 53,
+          "edge_mean": 0.08793004697091508,
+          "edge_t": 2.2014161525962135,
+          "avg_dispersion": 0.35491966523565643
+        },
+        {
+          "year": 2022,
+          "n_rebalances": 52,
+          "edge_mean": -0.017194845976131457,
+          "edge_t": -1.0763543583559205,
+          "avg_dispersion": 0.1710908298689286
+        },
+        {
+          "year": 2023,
+          "n_rebalances": 52,
+          "edge_mean": 0.027688173931547724,
+          "edge_t": 1.2562524480898138,
+          "avg_dispersion": 0.21030042822247746
+        },
+        {
+          "year": 2024,
+          "n_rebalances": 52,
+          "edge_mean": 0.024269503982596287,
+          "edge_t": 1.192246926262381,
+          "avg_dispersion": 0.22509619170651696
+        },
+        {
+          "year": 2025,
+          "n_rebalances": 52,
+          "edge_mean": -7.875553039496996e-05,
+          "edge_t": -0.0050232180836771115,
+          "avg_dispersion": 0.2513555283538494
+        },
+        {
+          "year": 2026,
+          "n_rebalances": 22,
+          "edge_mean": -0.029225657379482628,
+          "edge_t": -2.0308681100683037,
+          "avg_dispersion": 0.17687418593604468
+        }
+      ],
+      "full_t": 1.7082214378960152,
+      "full_mean": 0.020568551237830385,
+      "boot_p": 0.021989005497251374,
+      "oos_t": -0.03760337428631219,
+      "oos_mean": -0.0004903816065513078,
+      "n": 283,
+      "corr_disp_edge": 0.9007892771084394,
+      "corr_disp_absedge": 0.7413118453741299
+    }
+  },
+  "verdict_2026": {
+    "avg_dispersion_2026": 0.17687418593604468,
+    "hist_disp_mean": 0.24255252867748575,
+    "hist_disp_std": 0.06189598090731503,
+    "dispersion_z": -1.0611083591968575,
+    "dispersion_ratio": 0.729220127699549,
+    "edge_2026": {
+      "year": 2026,
+      "n_rebalances": 22,
+      "edge_mean": -0.010113483619211215,
+      "edge_t": -1.5374195230115086,
+      "avg_dispersion": 0.17687418593604468
+    },
+    "verdict": "DISPERSION DROUGHT (edge dormant; dispersion abnormally low)"
+  }
+}
