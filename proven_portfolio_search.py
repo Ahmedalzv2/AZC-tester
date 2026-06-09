@@ -145,7 +145,11 @@ def load_universe(tickers: list[str] | None = None, *, refresh: bool = False) ->
     for t in tickers:
         fp = CACHE / f"{t}.csv"
         if fp.exists() and not refresh:
-            df = pd.read_csv(fp, index_col=0, parse_dates=True)
+            df = pd.read_csv(fp, index_col=0)
+            # CSV round-trip loses the dtype; coerce back to a DatetimeIndex or
+            # build_portfolio's date math sees strings (silent until cached).
+            df.index = pd.to_datetime(df.index, utc=True, errors="coerce")
+            df = df[df.index.notna()]
         else:
             df = yf.Ticker(t).history(period="max", interval="1d")[["Open", "High", "Low", "Close"]]
             df.to_csv(fp)
