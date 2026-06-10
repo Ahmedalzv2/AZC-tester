@@ -55,3 +55,52 @@ def test_skip_records_counted_not_traded(tmp_path):
     assert out["skips_chop"] == 2
     assert out["trades_resolved"] == 0
     assert out["entries"] == 1
+
+
+def test_same_bar_cluster_deflates_significance(tmp_path):
+    # 26 winning exits crammed into 2 bars = 2 independent events, not 26.
+    # Per-trade t looks huge; cluster-level evidence is nowhere near t>=2.
+    records = []
+    for i in range(26):
+        bar = 4 * 3600 * 1000 * (1 if i < 13 else 2)
+        records.append({"ts": bar + i, "barTs": bar, "decision": "exit",
+                        "win": True, "netR": 0.9 + (i % 3) * 0.1, "symbol": f"S{i}"})
+    out = ls.lane_significance(_write(tmp_path, records))
+    assert out["cluster"]["n_bars"] == 2
+    assert out["significant"] is False
+    assert "CONFIRMED" not in out["status"]
+
+
+def test_open_positions_stress_gates_significance(tmp_path):
+    # 12 resolved winners across independent bars would clear t>=2 alone,
+    # but 10 still-open positions marked at -0.5R must hold the flag down.
+    bar = 4 * 3600 * 1000
+    records = []
+    for i in range(12):
+        records.append({"ts": i * bar + 500, "barTs": i * bar, "decision": "exit",
+                        "win": True, "netR": 0.45 + (i % 2) * 0.1, "symbol": f"W{i}"})
+    for j in range(10):
+        records.append({"ts": (20 + j) * bar, "barTs": (20 + j) * bar,
+                        "decision": "entry", "dir": "long", "symbol": f"O{j}"})
+    out = ls.lane_significance(_write(tmp_path, records))
+    assert out["open_positions"]["count"] == 10
+    assert out["cluster"]["tstat"] > 2.0  # resolved-only evidence is strong...
+    assert out["significant"] is False    # ...but opens-at-risk veto the flag
+    no_opens = [r for r in records if r["decision"] == "exit"]
+    assert ls.lane_significance(_write(tmp_path, no_opens))["significant"] is True
+
+
+def test_restart_duplicate_entries_not_counted_open(tmp_path):
+    # Crash-restart loops re-log the same entry; an exit closes the symbol's
+    # position regardless of how many duplicate entry rows precede it.
+    bar = 4 * 3600 * 1000
+    records = [
+        {"ts": 1, "barTs": bar, "decision": "entry", "dir": "long", "symbol": "BNB"},
+        {"ts": 2, "barTs": bar, "decision": "entry", "dir": "long", "symbol": "BNB"},
+        {"ts": 3, "barTs": bar, "decision": "entry", "dir": "long", "symbol": "BNB"},
+        {"ts": 4, "barTs": 2 * bar, "decision": "exit", "win": True, "netR": 0.4, "symbol": "BNB"},
+        {"ts": 5, "barTs": 2 * bar, "decision": "entry", "dir": "short", "symbol": "APT"},
+    ]
+    out = ls.lane_significance(_write(tmp_path, records))
+    assert out["open_positions"]["count"] == 1
+    assert out["open_positions"]["symbols"] == ["APT"]

@@ -27,6 +27,9 @@ LANES = {
     "meanrev": SHADOW_DIR / "meanrev-signals.jsonl",
 }
 WEEK_MS = 7 * 24 * 3600 * 1000
+# A t-stat over a handful of bar-events is numerically unstable (2 near-equal
+# bar sums read t>500); the flag may not fire below this many independent bars.
+MIN_INDEPENDENT_BARS = 10
 
 
 def _read_records(path: Path) -> list[dict[str, Any]]:
@@ -42,6 +45,32 @@ def _read_records(path: Path) -> list[dict[str, Any]]:
         except json.JSONDecodeError:
             continue
     return out
+
+
+def _cluster_by_bar(exits: list[dict[str, Any]]) -> list[float]:
+    """Collapse exits to one portfolio-R observation per 4h bar. Trades that
+    resolve on the same bar across a correlated basket are one market event,
+    not independent samples — pooling them inflates t (2026-06-10 teardown:
+    26 trades / 8 bars read t=3.07 per-trade vs ~1.9 per-bar)."""
+    by_bar: dict[float, float] = {}
+    for r in exits:
+        bar = r.get("barTs") if isinstance(r.get("barTs"), (int, float)) else r.get("ts", 0)
+        by_bar[bar] = by_bar.get(bar, 0.0) + float(r["netR"])
+    return [by_bar[k] for k in sorted(by_bar)]
+
+
+def _open_positions(records: list[dict[str, Any]]) -> list[str]:
+    """Symbols whose latest decision is an unresolved entry. Counted per
+    symbol, not per entry row — crash-restart loops re-log the same entry,
+    and the lane holds at most one position per symbol."""
+    state: dict[Any, bool] = {}
+    for r in records:
+        d = r.get("decision")
+        if d == "entry":
+            state[r.get("symbol")] = True
+        elif d == "exit":
+            state[r.get("symbol")] = False
+    return sorted(s for s, open_ in state.items() if open_ and s is not None)
 
 
 def _trades_to_significance(net_rs: list[float]) -> dict[str, Any]:
@@ -96,6 +125,23 @@ def lane_significance(path: Path) -> dict[str, Any]:
             trades_per_week = round(len(net_rs) / (span_ms / WEEK_MS), 2)
 
     sig = _trades_to_significance(net_rs)
+
+    # Honest verdict layer: judge on independent bar-events with the open
+    # book marked against us, not on pooled per-trade rows. A trail-only
+    # design resolves winners fast and parks losers under the wide initial
+    # stop, so resolved-only stats carry survivorship bias.
+    bar_rs = _cluster_by_bar(exits)
+    cluster = _trades_to_significance(bar_rs)
+    cluster["n_bars"] = len(bar_rs)
+    open_syms = _open_positions(records)
+    stress_half = _trades_to_significance(bar_rs + [-0.5] * len(open_syms))
+    stress_full = _trades_to_significance(bar_rs + [-1.0] * len(open_syms))
+    significant = bool(
+        cluster["n_bars"] >= MIN_INDEPENDENT_BARS
+        and abs(cluster["tstat"]) >= 2.0 and cluster["pvalue"] < 0.05
+        and abs(stress_half["tstat"]) >= 2.0
+    )
+
     wins = sum(1 for r in exits if r.get("win"))
     # Last resolved trades, so a remote supervisor can DIAGNOSE a failing lane
     # (which dir/symbol/exit is bleeding), not just read the aggregate t-stat.
@@ -113,14 +159,22 @@ def lane_significance(path: Path) -> dict[str, Any]:
         "span_days": span_days,
         "trades_per_week": trades_per_week,
         **sig,
+        "significant": significant,
+        "cluster": cluster,
+        "open_positions": {"count": len(open_syms), "symbols": open_syms},
+        "open_stress": {"tstat_at_minus_half_R": stress_half["tstat"],
+                        "tstat_at_minus_1R": stress_full["tstat"]},
         "power": _eta_to_power(net_rs, trades_per_week),
         "recent_trades": recent,
         "log_present": path.exists(),
     }
     if not net_rs:
         out["status"] = "accumulating — no resolved trades yet"
+    elif significant:
+        out["status"] = "LIVE EDGE CONFIRMED (cluster |t|>=2, p<0.05, holds with opens at -0.5R)"
     elif sig["significant"]:
-        out["status"] = "LIVE EDGE CONFIRMED (|t|>=2, p<0.05)"
+        out["status"] = ("per-trade t inflated by same-bar clustering/open book — "
+                         "not significant at the bar level yet")
     else:
         out["status"] = "accumulating — not yet significant"
     return out
