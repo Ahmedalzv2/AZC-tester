@@ -1,0 +1,361 @@
+{
+  "scanned": 25,
+  "params": {
+    "round_trip_cost_pct": 0.25,
+    "trail_settles": 21,
+    "enter_bps": 3e-05
+  },
+  "basket_mean_gated_net_ann_pct": 1.094,
+  "results": [
+    {
+      "symbol": "INJ",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 81.6,
+      "always_in_ann_gross_pct": 8.206,
+      "always_in_hac_t": 2.86,
+      "gated": {
+        "cycles": 8,
+        "ann_net_pct": 10.076,
+        "hac_t": 8.15,
+        "time_in_pos_pct": 86.9
+      }
+    },
+    {
+      "symbol": "BTC",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 78.1,
+      "always_in_ann_gross_pct": 3.893,
+      "always_in_hac_t": 13.5,
+      "gated": {
+        "cycles": 4,
+        "ann_net_pct": 3.276,
+        "hac_t": 9.03,
+        "time_in_pos_pct": 74.9
+      }
+    },
+    {
+      "symbol": "UNI",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 78.7,
+      "always_in_ann_gross_pct": 3.285,
+      "always_in_hac_t": 3.96,
+      "gated": {
+        "cycles": 8,
+        "ann_net_pct": 3.15,
+        "hac_t": 6.21,
+        "time_in_pos_pct": 83.1
+      }
+    },
+    {
+      "symbol": "LINK",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 76.7,
+      "always_in_ann_gross_pct": 4.64,
+      "always_in_hac_t": 15.84,
+      "gated": {
+        "cycles": 9,
+        "ann_net_pct": 2.545,
+        "hac_t": 4.85,
+        "time_in_pos_pct": 83.3
+      }
+    },
+    {
+      "symbol": "ETH",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 74.5,
+      "always_in_ann_gross_pct": 3.378,
+      "always_in_hac_t": 10.65,
+      "gated": {
+        "cycles": 7,
+        "ann_net_pct": 2.178,
+        "hac_t": 4.98,
+        "time_in_pos_pct": 69.9
+      }
+    },
+    {
+      "symbol": "ETC",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 72.6,
+      "always_in_ann_gross_pct": 3.461,
+      "always_in_hac_t": 6.05,
+      "gated": {
+        "cycles": 10,
+        "ann_net_pct": 1.799,
+        "hac_t": 2.6,
+        "time_in_pos_pct": 71.6
+      }
+    },
+    {
+      "symbol": "SUI",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 72.1,
+      "always_in_ann_gross_pct": 3.618,
+      "always_in_hac_t": 10.23,
+      "gated": {
+        "cycles": 9,
+        "ann_net_pct": 1.793,
+        "hac_t": 3.48,
+        "time_in_pos_pct": 65.5
+      }
+    },
+    {
+      "symbol": "AAVE",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 73.3,
+      "always_in_ann_gross_pct": 2.397,
+      "always_in_hac_t": 3.32,
+      "gated": {
+        "cycles": 10,
+        "ann_net_pct": 1.666,
+        "hac_t": 3.16,
+        "time_in_pos_pct": 74.1
+      }
+    },
+    {
+      "symbol": "ARB",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 73.8,
+      "always_in_ann_gross_pct": 3.289,
+      "always_in_hac_t": 5.43,
+      "gated": {
+        "cycles": 11,
+        "ann_net_pct": 1.661,
+        "hac_t": 2.91,
+        "time_in_pos_pct": 75.9
+      }
+    },
+    {
+      "symbol": "RUNE",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 75.4,
+      "always_in_ann_gross_pct": 0.671,
+      "always_in_hac_t": 0.48,
+      "gated": {
+        "cycles": 12,
+        "ann_net_pct": 1.59,
+        "hac_t": 2.41,
+        "time_in_pos_pct": 68.1
+      }
+    },
+    {
+      "symbol": "DOGE",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 67.8,
+      "always_in_ann_gross_pct": 2.635,
+      "always_in_hac_t": 8.08,
+      "gated": {
+        "cycles": 10,
+        "ann_net_pct": 1.075,
+        "hac_t": 2.19,
+        "time_in_pos_pct": 69.0
+      }
+    },
+    {
+      "symbol": "DOT",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 61.1,
+      "always_in_ann_gross_pct": -2.155,
+      "always_in_hac_t": -1.76,
+      "gated": {
+        "cycles": 10,
+        "ann_net_pct": 0.847,
+        "hac_t": 1.39,
+        "time_in_pos_pct": 51.8
+      }
+    },
+    {
+      "symbol": "ADA",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 69.7,
+      "always_in_ann_gross_pct": 3.054,
+      "always_in_hac_t": 7.4,
+      "gated": {
+        "cycles": 13,
+        "ann_net_pct": 0.747,
+        "hac_t": 1.27,
+        "time_in_pos_pct": 60.8
+      }
+    },
+    {
+      "symbol": "XRP",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 58.6,
+      "always_in_ann_gross_pct": 0.844,
+      "always_in_hac_t": 2.22,
+      "gated": {
+        "cycles": 8,
+        "ann_net_pct": 0.435,
+        "hac_t": 1.02,
+        "time_in_pos_pct": 41.6
+      }
+    },
+    {
+      "symbol": "NEAR",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 71.4,
+      "always_in_ann_gross_pct": 3.067,
+      "always_in_hac_t": 6.98,
+      "gated": {
+        "cycles": 15,
+        "ann_net_pct": 0.365,
+        "hac_t": 0.62,
+        "time_in_pos_pct": 75.3
+      }
+    },
+    {
+      "symbol": "OP",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 65.4,
+      "always_in_ann_gross_pct": 0.206,
+      "always_in_hac_t": 0.22,
+      "gated": {
+        "cycles": 13,
+        "ann_net_pct": 0.264,
+        "hac_t": 0.45,
+        "time_in_pos_pct": 54.2
+      }
+    },
+    {
+      "symbol": "BNB",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 24.5,
+      "always_in_ann_gross_pct": -0.69,
+      "always_in_hac_t": -1.54,
+      "gated": {
+        "cycles": 6,
+        "ann_net_pct": 0.117,
+        "hac_t": 0.33,
+        "time_in_pos_pct": 19.6
+      }
+    },
+    {
+      "symbol": "BCH",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 47.0,
+      "always_in_ann_gross_pct": -6.878,
+      "always_in_hac_t": -5.56,
+      "gated": {
+        "cycles": 9,
+        "ann_net_pct": -0.023,
+        "hac_t": -0.05,
+        "time_in_pos_pct": 32.9
+      }
+    },
+    {
+      "symbol": "APT",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 45.5,
+      "always_in_ann_gross_pct": -11.914,
+      "always_in_hac_t": -5.62,
+      "gated": {
+        "cycles": 8,
+        "ann_net_pct": -0.105,
+        "hac_t": -0.24,
+        "time_in_pos_pct": 30.0
+      }
+    },
+    {
+      "symbol": "AVAX",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 61.2,
+      "always_in_ann_gross_pct": 0.661,
+      "always_in_hac_t": 1.19,
+      "gated": {
+        "cycles": 15,
+        "ann_net_pct": -0.551,
+        "hac_t": -0.94,
+        "time_in_pos_pct": 48.3
+      }
+    },
+    {
+      "symbol": "SOL",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 58.5,
+      "always_in_ann_gross_pct": -0.075,
+      "always_in_hac_t": -0.09,
+      "gated": {
+        "cycles": 14,
+        "ann_net_pct": -0.591,
+        "hac_t": -1.1,
+        "time_in_pos_pct": 46.7
+      }
+    },
+    {
+      "symbol": "TRX",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 53.2,
+      "always_in_ann_gross_pct": -3.684,
+      "always_in_hac_t": -3.63,
+      "gated": {
+        "cycles": 12,
+        "ann_net_pct": -0.776,
+        "hac_t": -1.51,
+        "time_in_pos_pct": 39.5
+      }
+    },
+    {
+      "symbol": "TIA",
+      "n_settles": 3237,
+      "span_days": 539.0,
+      "pct_positive": 62.2,
+      "always_in_ann_gross_pct": -2.702,
+      "always_in_hac_t": -3.99,
+      "gated": {
+        "cycles": 23,
+        "ann_net_pct": -1.271,
+        "hac_t": -3.58,
+        "time_in_pos_pct": 36.1
+      }
+    },
+    {
+      "symbol": "ATOM",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 37.4,
+      "always_in_ann_gross_pct": -10.989,
+      "always_in_hac_t": -6.85,
+      "gated": {
+        "cycles": 9,
+        "ann_net_pct": -1.369,
+        "hac_t": -3.06,
+        "time_in_pos_pct": 16.3
+      }
+    },
+    {
+      "symbol": "SEI",
+      "n_settles": 1619,
+      "span_days": 539.0,
+      "pct_positive": 37.7,
+      "always_in_ann_gross_pct": -14.116,
+      "always_in_hac_t": -10.81,
+      "gated": {
+        "cycles": 10,
+        "ann_net_pct": -1.536,
+        "hac_t": -3.26,
+        "time_in_pos_pct": 14.8
+      }
+    }
+  ]
+}
